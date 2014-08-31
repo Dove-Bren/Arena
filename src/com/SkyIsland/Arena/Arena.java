@@ -1,9 +1,16 @@
 package com.SkyIsland.Arena;
 
+//import java.util.Random;
+
 import java.util.Random;
+
+
+
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -11,6 +18,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+
+import com.SkyIsland.Arena.Team.Team;
+import com.SkyIsland.Arena.Team.TeamPlayer;
 
 /**
  * class for the arena at the spawn
@@ -35,18 +45,47 @@ public class Arena implements Listener{
 	private boolean currentFight;
 	
 	/**
-	 * the location where players are teleported after the battle
+	 * the location where players are teleported after/at the start of the battle
 	 */
-	private Location exitLocation;
+	private Location exitLocation, teamOneSpawn, teamTwoSpawn, teamOneButton, teamTwoButton;
+	
+	/**
+	 * The X and Y radius of the spawn rectangle centered on {@link com.SkyIsland.Arena.Arena#teamOneSpawn teamOneSpawn}.
+	 */
+	private int spawnRadiusOneX, spawnRadiusOneY, spawnRadiusTwoX, spawnRadiusTwoY;
+	
 	
 	/**
 	 * default constructor.
 	 */
-	public Arena(){
-		redTeam = new Team("Red Team");
-		blueTeam = new Team("Blue Team");
+//	public Arena(){
+//		this("Red Team", "Blue Team", new Location(Bukkit.getWorld("HomeWorld"), -106, 71, 9136));
+////		redTeam = new Team("Red Team");
+////		blueTeam = new Team("Blue Team");
+////		currentFight = false;
+////		exitLocation = new Location(Bukkit.getWorld("HomeWorld"), -106, 71, 9136);
+//	}
+	
+	public Arena(YamlConfiguration config) {
+		redTeam = new Team(config.getString("teamOneName", "Red Team"));
+		blueTeam = new Team(config.getString("teamTwoName", "Blue Team"));
 		currentFight = false;
-		exitLocation = new Location(Bukkit.getWorld("HomeWorld"), -106, 71, 9136);
+		this.exitLocation = (Location) config.get("exitLocation");
+		this.teamOneSpawn = new Location(Bukkit.getWorld(UUID.fromString(config.getString("world"))), config.getInt("redSpawnCenterX"), config.getInt("redSpawnCenterY"), config.getInt("redSpawnCenterZ"));
+		//this.teamTwoSpawn = (Location) config.get("blueSpawnCenter");
+		this.teamTwoSpawn = new Location(Bukkit.getWorld(UUID.fromString(config.getString("world"))), config.getInt("blueSpawnCenterX"), config.getInt("blueSpawnCenterY"), config.getInt("blueSpawnCenterZ"));
+		this.spawnRadiusOneX = config.getInt("redSpawnRadiusX", 0);
+		this.spawnRadiusOneY = config.getInt("redSpawnRadiusY", 0);
+		this.spawnRadiusTwoX = config.getInt("blueSpawnRadiusX", 0);
+		this.spawnRadiusTwoY = config.getInt("blueSpawnRadiusY", 0);
+		this.teamOneButton = (Location) config.get("redButton");
+		this.teamTwoButton = (Location) config.get("blueButton");
+		
+		
+
+//		config.set("blueSpawnCenterX", -102);
+//		config.set("blueSpawnCenterY", 69);
+//		config.set("blueSpawnCenterZ", 9136);
 	}
 	
 	/**
@@ -61,7 +100,6 @@ public class Arena implements Listener{
 		
 		//add player if the red switch was pressed
 		if (redSwitchPressed(event)){
-			
 			//make sure there isn't a current fight going on
 			if (currentFight){
 				player.sendMessage("I'm sorry, but a fight is already in progress.");
@@ -153,7 +191,7 @@ public class Arena implements Listener{
 		Player player = event.getEntity();
 		checkTeam(player);
 		player.teleport(exitLocation);
-		player.setHealth(5);
+		player.setHealth(20);
 		
 	}
 	
@@ -198,15 +236,22 @@ public class Arena implements Listener{
 		
 		//teleport both teams
 		//red
+		Location actualLocation;
+		Random rand = new Random();
+		
 		for (TeamPlayer p: redTeam.getPlayers()){
-			int rand = new Random().nextInt(8);
-			p.getPlayer().teleport(new Location(Bukkit.getWorld("HomeWorld"), 272 + rand + 1, 73, 187, 0, 0));
+			//int rand = new Random().nextInt(8);
+			actualLocation = teamOneSpawn.clone();
+			actualLocation.add(rand.nextInt(spawnRadiusOneX), 0, rand.nextInt(spawnRadiusOneY));
+			p.getPlayer().teleport(actualLocation);
 			p.getPlayer().sendMessage("The fight has begun.");
 		}
 		//blue
 		for (TeamPlayer p: blueTeam.getPlayers()){
-			int rand = new Random().nextInt(8);
-			p.getPlayer().teleport(new Location(Bukkit.getWorld("HomeWorld"), 272 + rand + 1, 73, 173, 180, 0));
+			//int rand = new Random().nextInt(8);
+			actualLocation = teamTwoSpawn.clone();
+			actualLocation.add(rand.nextInt(spawnRadiusTwoX), 0, rand.nextInt(spawnRadiusTwoY));
+			p.getPlayer().teleport(actualLocation);
 			p.getPlayer().sendMessage("The fight has begun.");
 		}
 		
@@ -252,7 +297,7 @@ public class Arena implements Listener{
 			return false;
 		}
 		
-		if (event.getClickedBlock().getLocation().equals(new Location(Bukkit.getWorld("HomeWorld"), -102, 70, 9140))){
+		if (event.getClickedBlock().getLocation().equals(this.teamOneButton)){
 			return true;
 		}
 		return false;
@@ -263,7 +308,7 @@ public class Arena implements Listener{
 			return false;
 		}
 		
-		if (event.getClickedBlock().getLocation().equals(new Location(Bukkit.getWorld("HomeWorld"), -104, 70, 9140))){
+		if (event.getClickedBlock().getLocation().equals(this.teamTwoButton)){
 			return true;
 		}
 		return false;

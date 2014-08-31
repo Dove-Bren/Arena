@@ -1,4 +1,4 @@
-package com.SkyIsland.Arena;
+package com.SkyIsland.Arena.Team;
 
 import org.bukkit.entity.Player;
 
