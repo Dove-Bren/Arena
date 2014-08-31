@@ -2,11 +2,14 @@ package com.SkyIsland.Arena;
 
 //import java.util.Random;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Random;
 
 
 
+import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -16,11 +19,12 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
@@ -29,6 +33,7 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import com.SkyIsland.Arena.Team.Team;
 import com.SkyIsland.Arena.Team.TeamPlayer;
+import com.SkyIsland.Arena.Utils.ArmorSet;
 
 /**
  * class for the arena at the spawn
@@ -65,9 +70,9 @@ public class Arena implements Listener{
 	/**
 	 * Stores the players inventories, if the gamemode forces it. This way they can get their inventories back
 	 */
-	private HashMap<UUID, ItemStack[]> inventories;
+	private HashMap<UUID, Set<ItemStack>> inventories;
 	
-	private HashMap<UUID, ItemStack[]> armors;
+	private HashMap<UUID, ArmorSet> armors;
 	
 	private Settings settings;
 	
@@ -93,8 +98,8 @@ public class Arena implements Listener{
 //	}
 	
 	public Arena(YamlConfiguration config) {
-		inventories = new HashMap<UUID, ItemStack[]>();
-		armors = new HashMap<UUID, ItemStack[]>();
+		inventories = new HashMap<UUID, Set<ItemStack>>();
+		armors = new HashMap<UUID, ArmorSet>();
 		
 		
 		World world = Bukkit.getWorld(UUID.fromString((String) config.get("world")));
@@ -245,9 +250,16 @@ public class Arena implements Listener{
 	 * @param event
 	 */
 	@EventHandler(priority = EventPriority.LOWEST)
-    public void removePlayer(PlayerDeathEvent event) {
+    public void removePlayer(EntityDamageByEntityEvent event) {
 		
-		Player player = event.getEntity();
+		if (event.getEntityType() != EntityType.PLAYER) {
+			return;
+		}
+		
+		Player player = (Player) event.getEntity();
+		
+		//are they about to die?
+		if (event.getDamage() >= player.getHealth())		
 		if (checkTeam(player)) {
 			player.teleport(coolLocation);
 			player.setHealth(20);
@@ -312,13 +324,32 @@ public class Arena implements Listener{
 		Location actualLocation;
 		Random rand = new Random();
 		PlayerInventory inv;
+		HashSet<ItemStack> set;
 		
 		for (TeamPlayer p: redTeam.getPlayers()){
 			if (!settings.KEEPARMOR) {
 				//save their inventory and suit them up in a custom style
 				inv = p.getPlayer().getInventory();
-				this.inventories.put(p.getPlayer().getUniqueId(), inv.getContents());
-				armors.put(p.getPlayer().getUniqueId(), inv.getArmorContents());
+				set = new HashSet<ItemStack>();
+				set.addAll(Arrays.asList(inv.getContents()));
+				this.inventories.put(p.getPlayer().getUniqueId(), set);
+				
+//				//armor slots
+//				set = new HashSet<ItemStack>();
+//				//we start with head
+//				set.add(inv.getHelmet());
+//				//then chest
+//				set.add(inv.getChestplate());
+//				//then legs
+//				set.add(inv.getLeggings());
+//				//and lastly boots
+//				set.add(inv.getBoots());
+				ArmorSet armor = new ArmorSet(inv.getHelmet(), inv.getChestplate(), inv.getLeggings(), inv.getBoots(), null);
+				
+				//we do them one at a time so we know which order they wre put in and because we have to parse it ourselves incase of null values
+				
+				//set.addAll(Arrays.asList(inv.getArmorContents()));
+				armors.put(p.getPlayer().getUniqueId(), armor);
 				inv.clear();
 				inv.setArmorContents(null);
 				
@@ -334,10 +365,27 @@ public class Arena implements Listener{
 		//blue
 		for (TeamPlayer p: blueTeam.getPlayers()){
 			if (!settings.KEEPARMOR) {
-				//save their inventory and suit them up in a custom style
 				inv = p.getPlayer().getInventory();
-				this.inventories.put(p.getPlayer().getUniqueId(), inv.getContents());
-				armors.put(p.getPlayer().getUniqueId(), inv.getArmorContents());
+				set = new HashSet<ItemStack>();
+				set.addAll(Arrays.asList(inv.getContents()));
+				this.inventories.put(p.getPlayer().getUniqueId(), set);
+				
+//				//armor slots
+//				set = new HashSet<ItemStack>();
+//				//we start with head
+//				set.add(inv.getHelmet());
+//				//then chest
+//				set.add(inv.getChestplate());
+//				//then legs
+//				set.add(inv.getLeggings());
+//				//and lastly boots
+//				set.add(inv.getBoots());
+				ArmorSet armor = new ArmorSet(inv.getHelmet(), inv.getChestplate(), inv.getLeggings(), inv.getBoots(), null);
+				
+				//we do them one at a time so we know which order they wre put in and because we have to parse it ourselves incase of null values
+				
+				//set.addAll(Arrays.asList(inv.getArmorContents()));
+				armors.put(p.getPlayer().getUniqueId(), armor);
 				inv.clear();
 				inv.setArmorContents(null);
 				
@@ -363,11 +411,11 @@ public class Arena implements Listener{
 		
 		//only one team must stand
 		if (redTeam.isAlive()){
-			redTeam.alertPlayers("Congradulations, your team won!");
+			redTeam.alertPlayers("Congratulations, your team won!");
 			blueTeam.alertPlayers("Your team lost. Better luck next time.");
 		}
 		else{
-			blueTeam.alertPlayers("Congradulations, your team won!");
+			blueTeam.alertPlayers("Congratulations, your team won!");
 			redTeam.alertPlayers("Your team lost. Better luck next time.");
 		}
 		
@@ -376,12 +424,25 @@ public class Arena implements Listener{
 			if (!settings.KEEPARMOR) {
 				//we gotta give them their stuff back
 				PlayerInventory inv = p.getPlayer().getInventory();
+				
 				inv.clear();
 				inv.setArmorContents(null);
 				
 				//give it back
-				inv.setArmorContents(armors.get(p.getPlayer().getUniqueId()));
-				inv.addItem(inventories.get(p.getPlayer().getUniqueId()));
+				Set<ItemStack> set;
+				ArmorSet armor;
+				
+				armor = armors.get(p.getPlayer().getUniqueId());
+				//inv.setArmorContents(set.toArray(new ItemStack[set.size()]));
+				//we have to go one by one so that it doesn't stop at a null value?
+				
+				inv.setHelmet(armor.getHelmet());
+				inv.setChestplate(armor.getChestplate());
+				inv.setLeggings(armor.getLeggings());
+				inv.setBoots(armor.getBoots());
+				
+				set = inventories.get(p.getPlayer().getUniqueId());
+				inv.setContents(set.toArray(new ItemStack[set.size()]));
 			}
 			
 			p.getPlayer().teleport(exitLocation);
@@ -395,8 +456,20 @@ public class Arena implements Listener{
 				inv.setArmorContents(null);
 				
 				//give it back
-				inv.setArmorContents(armors.get(p.getPlayer().getUniqueId()));
-				inv.addItem(inventories.get(p.getPlayer().getUniqueId()));
+				Set<ItemStack> set;
+				ArmorSet armor;
+				
+				armor = armors.get(p.getPlayer().getUniqueId());
+				//inv.setArmorContents(set.toArray(new ItemStack[set.size()]));
+				//we have to go one by one so that it doesn't stop at a null value?
+				
+				inv.setHelmet(armor.getHelmet());
+				inv.setChestplate(armor.getChestplate());
+				inv.setLeggings(armor.getLeggings());
+				inv.setBoots(armor.getBoots());
+				
+				set = inventories.get(p.getPlayer().getUniqueId());
+				inv.setContents(set.toArray(new ItemStack[set.size()]));
 			}
 			
 			
