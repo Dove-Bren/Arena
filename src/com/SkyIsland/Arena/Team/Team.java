@@ -24,6 +24,10 @@ public class Team {
 		return teamInfo;
 	}
 	
+	public int getNumberPlayers() {
+		return this.players.size();
+	}
+	
 	public LinkedList<TeamPlayer> getPlayers(){
 		return players;
 	}
@@ -113,5 +117,22 @@ public class Team {
 		for (TeamPlayer tp: players){
 			tp.getPlayer().sendMessage(message);
 		}
+	}
+	
+
+	/**
+	 * Asks the team if the given player is ready.
+	 * @param player The player we are inquiring about
+	 * @return true if the player is in the team and ready and false otherwise
+	 */
+	public boolean playerReady(Player player) {
+		for (TeamPlayer p : players) {
+			if (p.getPlayer().equals(player)) {
+				//player is in the list
+				return p.isReady();
+			}
+		}
+		//player is not in the list
+		return false;
 	}
 }

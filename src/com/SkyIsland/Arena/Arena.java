@@ -116,15 +116,21 @@ public class Arena implements Listener{
 			if (! redTeam.contains(player)){
 				redTeam.addPlayer(player);
 				player.sendMessage("You have joined The " + redTeam.getName());
+				blueTeam.alertPlayers(player.getDisplayName() + "has joined the " + redTeam.getName());
 			}
 			
-			//pressing the switch while already on the team signals that the player is ready
-			else{
+			//pressing the switch while already on the team signals that the player is ready.
+			//We first chest if they are already on the team to prevent spamming messages
+			else if (!redTeam.playerReady(player)){
 				redTeam.setReady(player);
 				player.sendMessage("You are now ready.");
 				
 				//check if everyone is ready
 				fightReady();
+			}
+			else {
+				//player is already on the team and already ready
+				player.sendMessage("You are already registered as ready!");
 			}
 		}
 		
@@ -148,13 +154,20 @@ public class Arena implements Listener{
 			if (! blueTeam.contains(player)){
 				blueTeam.addPlayer(player);
 				player.sendMessage("You have joined The " + blueTeam.getName());
+				redTeam.alertPlayers(player.getDisplayName() + "has joined the " + blueTeam.getName());
 			}
 			
 			//pressing the switch while already on the team signals that the player is ready
-			else{
+			else if (!blueTeam.playerReady(player)){
 				blueTeam.setReady(player);
 				player.sendMessage("You are now ready.");
+				
+				//check if everyone is ready
 				fightReady();
+			}
+			else {
+				//player is already on the team and already ready
+				player.sendMessage("You are already registered as ready!");
 			}
 		}
     }
@@ -163,8 +176,19 @@ public class Arena implements Listener{
 	 * Check if both teams are ready. Start that fight if they are both ready.
 	 */
 	public void fightReady(){
+		//if the whole team is ready, let the other team know about it
+		boolean red, blue;
+		red = redTeam.isReady();
+		blue = blueTeam.isReady();
+		if (red) {
+			blueTeam.alertPlayers("The " + redTeam.getName() + " is now ready to battle!");
+		}
+		if (blue) {
+			redTeam.alertPlayers("The " + blueTeam.getName() + " is now ready to battle!");
+		}
+		
 		//if both teams are ready...
-		if (redTeam.isReady() && blueTeam.isReady()){
+		if (red && blue){
 			//start the fight
 			startfight();
 		}
@@ -189,10 +213,10 @@ public class Arena implements Listener{
     public void removePlayer(PlayerDeathEvent event) {
 		
 		Player player = event.getEntity();
-		checkTeam(player);
-		player.teleport(exitLocation);
-		player.setHealth(20);
-		
+		if (checkTeam(player)) {
+			player.teleport(exitLocation);
+			player.setHealth(20);
+		}
 	}
 	
 	/**
@@ -208,25 +232,39 @@ public class Arena implements Listener{
 	}
 	
 	/**
-	 * Checks if a player was on a team. If so, remove the player from that team.
+	 * Returns if a player was on a team. 
+	 * <p />If the player was on a team, they will be removed from it and the teams updated.
 	 * @param player
+	 * @return Whether or not that player was on an Arena team.
 	 */
-	public void checkTeam(Player player){
+	public boolean checkTeam(Player player){
 		//check if player died in the arena
 		if (redTeam.contains(player)){
 			//remove the dead player from the red team
 			redTeam.setDead(player);
+			if (redTeam.getNumberPlayers() != 0) {
+				redTeam.alertPlayers(player.getDisplayName() + " has been slain! " + redTeam.getNumberPlayers() + " left!");
+				blueTeam.alertPlayers(player.getDisplayName() + " has been slain!");
+			}
 			
 			//check if the fight is now over
 			fightOver();
+			return true;
 		}
 		else if (blueTeam.contains(player)){
 			//remove the dead player from the red team
 			blueTeam.setDead(player);
+			if (blueTeam.getNumberPlayers() != 0) {
+				blueTeam.alertPlayers(player.getDisplayName() + " has been slain! " + blueTeam.getNumberPlayers() + " left!");
+				redTeam.alertPlayers(player.getDisplayName() + " has been slain!");
+			}
 			
 			//check if the fight is now over
 			fightOver();
+			return true;
 		}
+		//let it know we didn't find that player in either team
+		return false;
 	}
 
 	/**
@@ -297,7 +335,7 @@ public class Arena implements Listener{
 			return false;
 		}
 		
-		if (event.getClickedBlock().getLocation().equals(this.teamOneButton)){
+		if (event.getClickedBlock().getLocation().equals(this.teamTwoButton)){
 			return true;
 		}
 		return false;
@@ -308,7 +346,7 @@ public class Arena implements Listener{
 			return false;
 		}
 		
-		if (event.getClickedBlock().getLocation().equals(this.teamTwoButton)){
+		if (event.getClickedBlock().getLocation().equals(this.teamOneButton)){
 			return true;
 		}
 		return false;
