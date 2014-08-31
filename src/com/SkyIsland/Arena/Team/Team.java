@@ -2,6 +2,7 @@ package com.SkyIsland.Arena.Team;
 
 import java.util.LinkedList;
 
+import org.bukkit.Color;
 import org.bukkit.entity.Player;
 
 public class Team {
@@ -9,13 +10,30 @@ public class Team {
 	private String teamName;
 	private LinkedList<TeamPlayer> players;
 	private String teamInfo;
+	private Color teamColor;
 	
-	public Team(String teamName){
+	
+	public Team(String teamName, Color color){
 		players = new LinkedList<TeamPlayer>();
 		this.teamName = teamName;
 		this.teamInfo = teamName;
+		this.teamColor = color;
 	}
 	
+	
+	
+	public Color getTeamColor() {
+		return teamColor;
+	}
+
+
+
+	public void setTeamColor(Color teamColor) {
+		this.teamColor = teamColor;
+	}
+
+
+
 	public String getName(){
 		return teamName;
 	}

@@ -2,6 +2,7 @@ package com.SkyIsland.Arena;
 
 //import java.util.Random;
 
+import java.util.HashMap;
 import java.util.Random;
 
 
@@ -9,7 +10,11 @@ import java.util.Random;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -18,6 +23,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import com.SkyIsland.Arena.Team.Team;
 import com.SkyIsland.Arena.Team.TeamPlayer;
@@ -47,14 +55,32 @@ public class Arena implements Listener{
 	/**
 	 * the location where players are teleported after/at the start of the battle
 	 */
-	private Location exitLocation, teamOneSpawn, teamTwoSpawn, teamOneButton, teamTwoButton;
+	private Location coolLocation, exitLocation, teamOneSpawn, teamTwoSpawn, teamOneButton, teamTwoButton;
 	
 	/**
 	 * The X and Y radius of the spawn rectangle centered on {@link com.SkyIsland.Arena.Arena#teamOneSpawn teamOneSpawn}.
 	 */
 	private int spawnRadiusOneX, spawnRadiusOneY, spawnRadiusTwoX, spawnRadiusTwoY;
 	
+	/**
+	 * Stores the players inventories, if the gamemode forces it. This way they can get their inventories back
+	 */
+	private HashMap<UUID, ItemStack[]> inventories;
 	
+	private HashMap<UUID, ItemStack[]> armors;
+	
+	private Settings settings;
+	
+	private class Settings {
+		
+		public boolean KEEPARMOR;
+		
+		protected Settings(ConfigurationSection config) {
+			KEEPARMOR = config.getBoolean("KEEPARMOR");
+		}
+
+	}
+
 	/**
 	 * default constructor.
 	 */
@@ -67,22 +93,31 @@ public class Arena implements Listener{
 //	}
 	
 	public Arena(YamlConfiguration config) {
-		redTeam = new Team(config.getString("teamOneName", "Red Team"));
-		blueTeam = new Team(config.getString("teamTwoName", "Blue Team"));
+		inventories = new HashMap<UUID, ItemStack[]>();
+		armors = new HashMap<UUID, ItemStack[]>();
+		
+		
+		World world = Bukkit.getWorld(UUID.fromString((String) config.get("world")));
+		redTeam = new Team(config.getString("teamOne.name", "Red Team"), Color.fromRGB(config.getInt("teamOne.color", Color.RED.asRGB())));
+		blueTeam = new Team(config.getString("teamTwo.name", "Blue Team"), Color.fromRGB(config.getInt("teamTwo.color", Color.BLUE.asRGB())));
 		currentFight = false;
-		this.exitLocation = (Location) config.get("exitLocation");
-		this.teamOneSpawn = new Location(Bukkit.getWorld(UUID.fromString(config.getString("world"))), config.getInt("redSpawnCenterX"), config.getInt("redSpawnCenterY"), config.getInt("redSpawnCenterZ"));
+		//this.exitLocation = (Location) config.get("exitLocation");
+		this.exitLocation = new Location(world, config.getInt("exit.X"), config.getInt("exit.Y"), config.getInt("exit.Z"));
+		this.coolLocation = new Location(world, config.getInt("cool.X"), config.getInt("cool.Y"), config.getInt("cool.Z"));
+		this.teamOneSpawn = new Location(world, config.getInt("teamOne.spawn.X"), config.getInt("teamOne.spawn.Y"), config.getInt("teamOne.spawn.Z"));
 		//this.teamTwoSpawn = (Location) config.get("blueSpawnCenter");
-		this.teamTwoSpawn = new Location(Bukkit.getWorld(UUID.fromString(config.getString("world"))), config.getInt("blueSpawnCenterX"), config.getInt("blueSpawnCenterY"), config.getInt("blueSpawnCenterZ"));
-		this.spawnRadiusOneX = config.getInt("redSpawnRadiusX", 0);
-		this.spawnRadiusOneY = config.getInt("redSpawnRadiusY", 0);
-		this.spawnRadiusTwoX = config.getInt("blueSpawnRadiusX", 0);
-		this.spawnRadiusTwoY = config.getInt("blueSpawnRadiusY", 0);
-		this.teamOneButton = (Location) config.get("redButton");
-		this.teamTwoButton = (Location) config.get("blueButton");
+		this.teamTwoSpawn = new Location(world, config.getInt("teamTwo.spawn.X"), config.getInt("teamTwo.spawn.Y"), config.getInt("teamTwo.spawn.Z"));
+		this.spawnRadiusOneX = config.getInt("teamOne.spawn.radius.X", 0);
+		this.spawnRadiusOneY = config.getInt("teamOne.spawn.radius.Y", 0);
+		this.spawnRadiusTwoX = config.getInt("teamTwo.spawn.radius.X", 0);
+		this.spawnRadiusTwoY = config.getInt("teamTwo.spawn.radius.Y", 0);
+		//this.teamOneButton = (Location) config.get("redButton");
+		//this.teamTwoButton = (Location) config.get("blueButton");
+		this.teamOneButton = new Location(world, config.getInt("teamOne.button.X"), config.getInt("teamOne.button.Y"), config.getInt("teamOne.button.Z"));
+		this.teamTwoButton = new Location(world, config.getInt("teamTwo.button.X"), config.getInt("teamTwo.button.Y"), config.getInt("teamTwo.button.Z"));
 		
 		
-
+		this.settings = new Settings(config.createSection("settings"));
 //		config.set("blueSpawnCenterX", -102);
 //		config.set("blueSpawnCenterY", 69);
 //		config.set("blueSpawnCenterZ", 9136);
@@ -214,7 +249,7 @@ public class Arena implements Listener{
 		
 		Player player = event.getEntity();
 		if (checkTeam(player)) {
-			player.teleport(exitLocation);
+			player.teleport(coolLocation);
 			player.setHealth(20);
 		}
 	}
@@ -276,19 +311,42 @@ public class Arena implements Listener{
 		//red
 		Location actualLocation;
 		Random rand = new Random();
+		PlayerInventory inv;
 		
 		for (TeamPlayer p: redTeam.getPlayers()){
+			if (!settings.KEEPARMOR) {
+				//save their inventory and suit them up in a custom style
+				inv = p.getPlayer().getInventory();
+				this.inventories.put(p.getPlayer().getUniqueId(), inv.getContents());
+				armors.put(p.getPlayer().getUniqueId(), inv.getArmorContents());
+				inv.clear();
+				inv.setArmorContents(null);
+				
+				suitUp(p, redTeam);
+			}
+			
 			//int rand = new Random().nextInt(8);
 			actualLocation = teamOneSpawn.clone();
-			actualLocation.add(rand.nextInt(spawnRadiusOneX), 0, rand.nextInt(spawnRadiusOneY));
+			actualLocation.add(Math.floor(rand.nextInt(spawnRadiusOneX + 1)), 0, Math.floor(rand.nextInt(spawnRadiusOneY + 1)));
 			p.getPlayer().teleport(actualLocation);
 			p.getPlayer().sendMessage("The fight has begun.");
 		}
 		//blue
 		for (TeamPlayer p: blueTeam.getPlayers()){
+			if (!settings.KEEPARMOR) {
+				//save their inventory and suit them up in a custom style
+				inv = p.getPlayer().getInventory();
+				this.inventories.put(p.getPlayer().getUniqueId(), inv.getContents());
+				armors.put(p.getPlayer().getUniqueId(), inv.getArmorContents());
+				inv.clear();
+				inv.setArmorContents(null);
+				
+				suitUp(p, blueTeam);
+			}
+			
 			//int rand = new Random().nextInt(8);
 			actualLocation = teamTwoSpawn.clone();
-			actualLocation.add(rand.nextInt(spawnRadiusTwoX), 0, rand.nextInt(spawnRadiusTwoY));
+			actualLocation.add(Math.floor(rand.nextInt(spawnRadiusTwoX+1)), 0, Math.floor(rand.nextInt(spawnRadiusTwoY+1)));
 			p.getPlayer().teleport(actualLocation);
 			p.getPlayer().sendMessage("The fight has begun.");
 		}
@@ -315,10 +373,33 @@ public class Arena implements Listener{
 		
 		//teleport the teams out
 		for(TeamPlayer p: redTeam.getPlayers()){
+			if (!settings.KEEPARMOR) {
+				//we gotta give them their stuff back
+				PlayerInventory inv = p.getPlayer().getInventory();
+				inv.clear();
+				inv.setArmorContents(null);
+				
+				//give it back
+				inv.setArmorContents(armors.get(p.getPlayer().getUniqueId()));
+				inv.addItem(inventories.get(p.getPlayer().getUniqueId()));
+			}
+			
 			p.getPlayer().teleport(exitLocation);
 		}
 		
 		for(TeamPlayer p: blueTeam.getPlayers()){
+			if (!settings.KEEPARMOR) {
+				//we gotta give them their stuff back
+				PlayerInventory inv = p.getPlayer().getInventory();
+				inv.clear();
+				inv.setArmorContents(null);
+				
+				//give it back
+				inv.setArmorContents(armors.get(p.getPlayer().getUniqueId()));
+				inv.addItem(inventories.get(p.getPlayer().getUniqueId()));
+			}
+			
+			
 			p.getPlayer().teleport(exitLocation);
 		}
 		
@@ -350,6 +431,38 @@ public class Arena implements Listener{
 			return true;
 		}
 		return false;
+	}
+	
+	/**
+	 * Sets up armor slots to resemble the team uniform.
+	 * <p /><b>This method DOES NOT SAVE the current armor before over-writing it!!!</b>
+	 * @param p the TeamPlayer to suit up
+	 */
+	private void suitUp(TeamPlayer p, Team team) {
+		PlayerInventory inv = p.getPlayer().getInventory();
+		ItemStack armor;
+		LeatherArmorMeta meta;
+		
+		//figure out what team they're on
+		
+		//first we do helm...
+		armor = new ItemStack(Material.LEATHER_HELMET);
+		meta = ((LeatherArmorMeta) armor.getItemMeta());
+		meta.setColor(team.getTeamColor());
+		armor.setItemMeta(meta);
+		
+		inv.setHelmet(armor);
+		
+		//next chestplate
+		armor = new ItemStack(Material.LEATHER_CHESTPLATE);
+		meta = ((LeatherArmorMeta) armor.getItemMeta());
+		meta.setColor(team.getTeamColor());
+		armor.setItemMeta(meta);
+		
+		inv.setChestplate(armor);
+		
+		//last we set their weapon
+		inv.setItemInHand(new ItemStack(Material.STONE_SWORD));
 	}
 
 }
