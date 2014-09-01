@@ -449,7 +449,7 @@ public class Arena implements Listener{
 			//added .5 to X and Z so that players spawn in the middle of the block
 			actualLocation.add(Math.floor(rand.nextInt(spawnRadiusOneX + 1)) + .5, 0, Math.floor(rand.nextInt(spawnRadiusOneY + 1)) + .5);
 			p.getPlayer().teleport(actualLocation);
-			p.getPlayer().sendMessage("The fight has begun.");
+			p.getPlayer().sendMessage("The fight will begin in");
 		}
 		//blue
 		for (TeamPlayer p: blueTeam.getPlayers()){
@@ -485,11 +485,12 @@ public class Arena implements Listener{
 			actualLocation = teamTwoSpawn.clone();
 			actualLocation.add(Math.floor(rand.nextInt(spawnRadiusTwoX+1)) + .5, 0, Math.floor(rand.nextInt(spawnRadiusTwoY+1)) + .5);
 			p.getPlayer().teleport(actualLocation);
-			p.getPlayer().sendMessage("The fight has begun.");
+			p.getPlayer().sendMessage("The fight will begin in");
 		}
 		
 		//start the fight
 		currentFight = true;
+		countDown();
 		
 	}
 	
@@ -774,6 +775,56 @@ public class Arena implements Listener{
 		}
 	}
 	
-	
+	private void countDown() {
+		final HashMap<TeamPlayer, Location> startingPositions = new HashMap<TeamPlayer, Location>();
+		final int delay;
+		final int increment;
+		delay = 5 * 20; //5 seconds
+		increment = 5; //1 second increments
+		
+		for (TeamPlayer player : redTeam.getPlayers()) {
+			startingPositions.put(player, player.getPlayer().getLocation());
+		}
+		for (TeamPlayer player : blueTeam.getPlayers()) {
+			startingPositions.put(player, player.getPlayer().getLocation());
+		}
+		
+		BukkitRunnable reset = new BukkitRunnable() {
+			int time = 0;
+			
+			@Override
+			public void run() {
+				time += increment;
+				if (time >= delay) {
+					broadcastMessage("Begin!");
+					cancel();
+				}
+				else {
+					if (time % 20 == 0) {
+						broadcastMessage((delay - time) / 20 + "...");
+					}
+					
+					//reset player positions
+					for (TeamPlayer player : redTeam.getPlayers()) {
+						player.getPlayer().teleport( startingPositions.get(player)  );
+					}
+					for (TeamPlayer player : blueTeam.getPlayers()) {
+						player.getPlayer().teleport( startingPositions.get(player)  );
+					}
+						
+				}
+				
+			}
+			
+			
+			
+		};
+		
+		
+		
+		
+		reset.runTaskTimer(Bukkit.getPluginManager().getPlugin("Arena"), increment, increment);
+		
+	}
 
 }
