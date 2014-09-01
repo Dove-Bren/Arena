@@ -538,4 +538,91 @@ public class Arena implements Listener{
 		inv.setItemInHand(new ItemStack(Material.STONE_SWORD));
 	}
 
+	protected Location getExitLocation() {
+		return exitLocation;
+	}
+
+	protected void setExitLocation(Location exitLocation) {
+		this.exitLocation = exitLocation;
+	}
+
+	protected Location getTeamOneSpawn() {
+		return teamOneSpawn;
+	}
+
+	protected void setTeamOneSpawn(Location teamOneSpawn) {
+		this.teamOneSpawn = teamOneSpawn;
+	}
+
+	protected Location getTeamTwoSpawn() {
+		return teamTwoSpawn;
+	}
+
+	protected void setTeamTwoSpawn(Location teamTwoSpawn) {
+		this.teamTwoSpawn = teamTwoSpawn;
+	}
+
+	protected Location getTeamOneButton() {
+		return teamOneButton;
+	}
+
+	protected void setTeamOneButton(Location teamOneButton) {
+		this.teamOneButton = teamOneButton;
+	}
+
+	protected Location getTeamTwoButton() {
+		return teamTwoButton;
+	}
+
+	protected void setTeamTwoButton(Location teamTwoButton) {
+		this.teamTwoButton = teamTwoButton;
+	}
+
+	protected int getSpawnRadiusOneX() {
+		return spawnRadiusOneX;
+	}
+
+	protected void setSpawnRadiusOneX(int spawnRadiusOneX) {
+		this.spawnRadiusOneX = spawnRadiusOneX;
+	}
+
+	protected int getSpawnRadiusOneY() {
+		return spawnRadiusOneY;
+	}
+
+	protected void setSpawnRadiusOneY(int spawnRadiusOneY) {
+		this.spawnRadiusOneY = spawnRadiusOneY;
+	}
+
+	protected int getSpawnRadiusTwoX() {
+		return spawnRadiusTwoX;
+	}
+
+	protected void setSpawnRadiusTwoX(int spawnRadiusTwoX) {
+		this.spawnRadiusTwoX = spawnRadiusTwoX;
+	}
+
+	protected int getSpawnRadiusTwoY() {
+		return spawnRadiusTwoY;
+	}
+
+	protected void setSpawnRadiusTwoY(int spawnRadiusTwoY) {
+		this.spawnRadiusTwoY = spawnRadiusTwoY;
+	}
+
+	protected Location getCoolLocation() {
+		return coolLocation;
+	}
+
+	protected void setCoolLocation(Location coolLocation) {
+		this.coolLocation = coolLocation;
+	}
+	
+	
+	
+	
+	
+	
+	
+
 }

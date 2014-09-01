@@ -15,14 +15,27 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class ArenaPlugin extends JavaPlugin {
 	
-	Arena arena;
-	YamlConfiguration config;
+	private Arena arena;
+	private YamlConfiguration config;
 	double version = 0.14;
 	
 	public void onEnable() {
 		load();
 		arena = new Arena(config);
 		getServer().getPluginManager().registerEvents(arena, this);
+	}
+	
+	public void onDisable() {
+		save();
+	}
+	
+	@Override
+	public YamlConfiguration getConfig() {
+		return this.config;
+	}
+	
+	protected Arena getArena() {
+		return arena;
 	}
 	
 	public void load() {
@@ -110,6 +123,25 @@ public class ArenaPlugin extends JavaPlugin {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+	}
+	
+	public void save() {
+		if (this.config == null) {
+			this.getLogger().info("No config to save.......Skipping!");
+			return;
+		}
+		
+		if (!this.getDataFolder().exists()) {
+			this.getDataFolder().mkdirs();
+		}
+		File configFile = new File(this.getDataFolder(), "config.yml");
+		
+		try {
+			this.config.save(configFile);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	

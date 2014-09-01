@@ -1,3 +1,24 @@
 name: Arena
 main: com.SkyIsland.Arena.ArenaPlugin
-version: 0.2
+version: 0.3
+softdepend: [WorldEdit, MenuService]
+permissions:
+    Arena.admin:
+        description: Allows for the creation and modification of an arena
+        default: op
+    Arena.participant:
+        description: Allows someone to play in the arena. This can be taken away as a punishment (...?)
+        default: yes
+commands:
+    setStartOne:
+        permission: Arena.admin
+        usage: /setStartOne
+    setStartTwo:
+        permission: Arena.admin
+        usage: /setStartTwo
+    setCool:
+        permission: Arena.admin
+        usage: /setCool
+    setExit:
+        permission: Arena.admin
+        usage: /setExit
