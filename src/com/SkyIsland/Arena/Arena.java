@@ -327,7 +327,7 @@ public class Arena implements Listener{
 	@EventHandler(priority = EventPriority.LOWEST)
     public void removePlayer(EntityDamageByEntityEvent event) {
 		
-		if (event.getEntityType() != EntityType.PLAYER || event.getDamager() instanceof Player) {
+		if (event.getEntityType() != EntityType.PLAYER || event.getDamager().getType() != EntityType.PLAYER) {
 			return;
 		}
 		
