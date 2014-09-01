@@ -16,6 +16,12 @@ commands:
     setStartTwo:
         permission: Arena.admin
         usage: /setStartTwo
+    setButtonOne:
+        permission: Arena.admin
+        usage: /setButtonOne
+    setButtonTwo:
+        permission: Arena.admin
+        usage: /setButtonTwo
     setCool:
         permission: Arena.admin
         usage: /setCool

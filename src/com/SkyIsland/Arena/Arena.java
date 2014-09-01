@@ -579,6 +579,7 @@ public class Arena implements Listener{
 			p.sendMessage("You have fled battle!");
 			return;
 		}
+		p.sendMessage("You aren't on a team!");
 	}
 	
 	

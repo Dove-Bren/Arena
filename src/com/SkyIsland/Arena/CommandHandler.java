@@ -67,6 +67,48 @@ public class CommandHandler {
 			return true;
 		}
 		
+		if (cmd.getName().equalsIgnoreCase("setButtonOne")) {
+			Selection selection = this.weplugin.getSelection((Player) sender);
+			if (selection.getArea() > 1) {
+				//start center should be one single block
+				sender.sendMessage("Invalid selection! The button can only be in one block");
+				return true;
+			}
+			Location loc;
+			loc = selection.getMaximumPoint();
+			
+			plugin.getConfig().set("teamOne.button.X", loc.getBlockX());
+			plugin.getConfig().set("teamOne.button.Y", loc.getBlockY());
+			plugin.getConfig().set("teamOne.button.Z", loc.getBlockZ());
+			
+			//update Arena instead of making a new one
+			plugin.getArena().setTeamOneButton(loc);
+			
+			return true;
+		}
+		
+		if (cmd.getName().equalsIgnoreCase("setButtonTwo")) {
+			Selection selection = this.weplugin.getSelection((Player) sender);
+			if (selection.getArea() > 1) {
+				//start center should be one single block
+				sender.sendMessage("Invalid selection! The button can only be in one block");
+				return true;
+			}
+			Location loc;
+			loc = selection.getMaximumPoint();
+			
+			plugin.getConfig().set("teamTwo.button.X", loc.getBlockX());
+			plugin.getConfig().set("teamTwo.button.Y", loc.getBlockY());
+			plugin.getConfig().set("teamTwo.button.Z", loc.getBlockZ());
+			
+			//update Arena instead of making a new one
+			plugin.getArena().setTeamTwoButton(loc);
+			
+			return true;
+		}
+		
+		
+		
 		if (cmd.getName().equalsIgnoreCase("setCool")) {
 			Selection selection = this.weplugin.getSelection((Player) sender);
 			if (selection.getArea() > 1) {

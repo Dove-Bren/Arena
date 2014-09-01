@@ -7,8 +7,11 @@ import java.io.IOException;
 
 
 
+
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -17,16 +20,22 @@ public class ArenaPlugin extends JavaPlugin {
 	
 	private Arena arena;
 	private YamlConfiguration config;
-	double version = 0.14;
+	public double version = 0.14;
+	private CommandHandler handler;
 	
 	public void onEnable() {
 		load();
 		arena = new Arena(config);
 		getServer().getPluginManager().registerEvents(arena, this);
+		this.handler = new CommandHandler(this);
 	}
 	
 	public void onDisable() {
 		save();
+	}
+	
+	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+		return this.handler.doCommand(sender, cmd, label, args);
 	}
 	
 	@Override
