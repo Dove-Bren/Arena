@@ -59,7 +59,7 @@ public class CommandHandler {
 			
 			plugin.getConfig().set("teamTwo.spawn.X", loc.getBlockX());
 			plugin.getConfig().set("teamTwo.spawn.Y", loc.getBlockY());
-			plugin.getConfig().set("teamTwp.spawn.Z", loc.getBlockZ());
+			plugin.getConfig().set("teamTwo.spawn.Z", loc.getBlockZ());
 			
 			//update Arena instead of making a new one
 			plugin.getArena().setTeamTwoSpawn(loc);

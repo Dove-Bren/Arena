@@ -218,6 +218,11 @@ public class Arena implements Listener{
 			//pressing the switch while already on the team signals that the player is ready.
 			//We first chest if they are already on the team to prevent spamming messages
 			else if (!redTeam.playerReady(player)){
+				if (blueTeam.getNumberPlayers() == 0) {
+					//there aren't any players on the other team
+					player.sendMessage("You can't ready up until there are players on both sides!");
+					return;
+				}
 				redTeam.setReady(player);
 				player.sendMessage("You are now ready.");
 				
@@ -258,7 +263,14 @@ public class Arena implements Listener{
 			}
 			
 			//pressing the switch while already on the team signals that the player is ready
-			else if (!blueTeam.playerReady(player)){
+			else if (!blueTeam.playerReady(player)){ //can't ready unless someone on both sides
+				
+				if (redTeam.getNumberPlayers() == 0) {
+					//there aren't any players on the other team
+					player.sendMessage("You can't ready up until there are players on both sides!");
+					return;
+				}
+				
 				blueTeam.setReady(player);
 				player.sendMessage("You are now ready.");
 				
@@ -282,13 +294,17 @@ public class Arena implements Listener{
 		blue = blueTeam.isReady();
 		if (red) {
 			blueTeam.alertPlayers("The " + redTeam.getName() + " is now ready to battle!");
-			if (timer == null) {
+			if (timer == null && !blue) {
 				//no timer currently on
 				timer = new Timer((ArenaPlugin) Bukkit.getPluginManager().getPlugin("Arena"), this.forceReady, 200, true, 20);
 			}
 		}
 		if (blue) {
 			redTeam.alertPlayers("The " + blueTeam.getName() + " is now ready to battle!");
+			if (timer == null && !red) {
+				//no timer currently on
+				timer = new Timer((ArenaPlugin) Bukkit.getPluginManager().getPlugin("Arena"), this.forceReady, 200, true, 20);
+			}
 		}
 		
 		//if both teams are ready...
@@ -407,6 +423,11 @@ public class Arena implements Listener{
 	 */
 	private void startfight() {
 		
+		//first things first, make sure the ifght hasn't already started (multiple calls)
+		if (this.currentFight) {
+			return;
+		}
+		
 		//teleport both teams
 		//red
 		Location actualLocation;
@@ -490,6 +511,11 @@ public class Arena implements Listener{
 		
 		//start the fight
 		currentFight = true;
+		
+		//make sure timer is null. If it's not, it's still counting down to auto-ready or auto-acknowledge
+		if (timer != null) {
+			timer.cancel();
+		}
 		countDown();
 		
 	}
@@ -790,8 +816,9 @@ public class Arena implements Listener{
 		}
 		
 		BukkitRunnable reset = new BukkitRunnable() {
-			int time = 0;
-			
+		int time = 0;
+		Location loc, pLoc;
+		
 			@Override
 			public void run() {
 				time += increment;
@@ -806,10 +833,25 @@ public class Arena implements Listener{
 					
 					//reset player positions
 					for (TeamPlayer player : redTeam.getPlayers()) {
-						player.getPlayer().teleport( startingPositions.get(player)  );
+						//player.getPlayer().teleport( startingPositions.get(player)  );  //resets direction, which we don't want
+						//instead we update the location stored with the current direction and pitch
+						loc = startingPositions.get(player);
+						pLoc = player.getPlayer().getLocation();						
+						//NOW we teleport them to that
+						pLoc.setX(loc.getX());
+						pLoc.setY(loc.getY());
+						pLoc.setZ(loc.getZ());
+						
 					}
 					for (TeamPlayer player : blueTeam.getPlayers()) {
-						player.getPlayer().teleport( startingPositions.get(player)  );
+						//player.getPlayer().teleport( startingPositions.get(player)  );  //resets direction, which we don't want
+						//instead we update the location stored with the current direction and pitch
+						loc = startingPositions.get(player);
+						pLoc = player.getPlayer().getLocation();						
+						//NOW we teleport them to that
+						pLoc.setX(loc.getX());
+						pLoc.setY(loc.getY());
+						pLoc.setZ(loc.getZ());
 					}
 						
 				}

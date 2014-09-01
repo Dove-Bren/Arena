@@ -10,6 +10,7 @@ public class Timer {
 	private boolean verbose;
 	private int increment, elapsed, total, stepSize;
 	private ArenaPlugin plugin;
+	private BukkitRunnable timer;
 	
 	/**
 	 * Creates a timer event tied to a plugin. It runs the RunnableTask after [ticks] ticks. If this timer is set to verbose, it will print out
@@ -27,6 +28,7 @@ public class Timer {
 		this.total = ticks;
 		this.elapsed = 0;
 		this.verbose = verbose;
+		this.timer = null;
 		
 		if (!this.verbose) {
 			//we can do it silenty; we can do all of the delay at once
@@ -68,4 +70,21 @@ public class Timer {
 	
 	//get
 	
+	public void cancel() {
+		try {
+			this.job.cancel();
+		}
+		catch (IllegalStateException e) {
+			//do nothing, because we don't care
+		}
+		
+		if (timer != null) {
+			try {
+				this.timer.cancel();
+			}
+			catch (IllegalStateException e) {
+				//stil don't care
+			}
+		}
+	}
 }
