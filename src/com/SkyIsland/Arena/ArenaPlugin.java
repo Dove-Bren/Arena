@@ -20,7 +20,7 @@ public class ArenaPlugin extends JavaPlugin {
 	
 	private Arena arena;
 	private YamlConfiguration config;
-	public double version = 0.14;
+	public double version = 0.15;
 	private CommandHandler handler;
 	
 	public void onEnable() {
@@ -66,6 +66,8 @@ public class ArenaPlugin extends JavaPlugin {
 			config.set("world", Bukkit.getWorld("HomeWorld").getUID().toString());
 			config.set("teamOne.name", "Red Team");
 			config.set("teamTwo.name", "Blue Team");
+			config.set("teamOne.max", 16);
+			config.set("teamTwo.max", 16);
 			//config.set("exitLocation", new Location(Bukkit.getWorld("HomeWorld"), -106, 71, 9136));
 			config.set("exit.X", -106);
 			config.set("exit.Y", 71);

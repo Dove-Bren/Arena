@@ -11,13 +11,15 @@ public class Team {
 	private LinkedList<TeamPlayer> players;
 	private String teamInfo;
 	private Color teamColor;
+	private int max;
 	
 	
-	public Team(String teamName, Color color){
+	public Team(String teamName, Color color, int max){
 		players = new LinkedList<TeamPlayer>();
 		this.teamName = teamName;
 		this.teamInfo = teamName;
 		this.teamColor = color;
+		this.max = max;
 	}
 	
 	
@@ -44,6 +46,17 @@ public class Team {
 	
 	public int getNumberPlayers() {
 		return this.players.size();
+	}
+	
+	public int getLivePlayers() {
+		int live;
+		live = 0;
+		for (TeamPlayer p : players) {
+			if (p.isAlive()) {
+				live+=1;
+			}
+		}
+		return live;
 	}
 	
 	public LinkedList<TeamPlayer> getPlayers(){
@@ -75,12 +88,18 @@ public class Team {
 		return false;
 	}
 	
-	public void addPlayer(Player p){
-		players.add(new TeamPlayer(p));
+	public boolean addPlayer(Player p){
+		return addPlayer(new TeamPlayer(p));
 	}
 	
-	public void addPlayer(TeamPlayer p){
+	public boolean addPlayer(TeamPlayer p){
+		if (this.getNumberPlayers() >= this.max) {
+			//too many players
+			p.getPlayer().sendMessage("This team is already full! (" + this.getNumberPlayers() + " / " + this.max + ")");
+			return false;
+		}
 		players.add(p);
+		return true;
 	}
 	
 	public void removePlayer(Player p){

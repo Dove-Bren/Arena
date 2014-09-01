@@ -101,10 +101,25 @@ public class Arena implements Listener{
 		inventories = new HashMap<UUID, Set<ItemStack>>();
 		armors = new HashMap<UUID, ArmorSet>();
 		
+		int maxOne, maxTwo;
+		maxOne = config.getInt("teamOne.max", 16);
+		if (maxOne > 64 || maxOne < 1 ) {
+			//invalid max
+			Bukkit.getPluginManager().getPlugin("Arena").getLogger().info("Invalid max size of team one!\n\n");
+			maxOne = 16;
+		}
+		
+		maxTwo = config.getInt("teamTwo.max", 16);
+		if (maxTwo > 64 || maxTwo < 1 ) {
+			//invalid max
+			Bukkit.getPluginManager().getPlugin("Arena").getLogger().info("Invalid max size of team two!\n\n");
+			maxTwo = 16;
+		}
+		
 		
 		World world = Bukkit.getWorld(UUID.fromString((String) config.get("world")));
-		redTeam = new Team(config.getString("teamOne.name", "Red Team"), Color.fromRGB(config.getInt("teamOne.color", Color.RED.asRGB())));
-		blueTeam = new Team(config.getString("teamTwo.name", "Blue Team"), Color.fromRGB(config.getInt("teamTwo.color", Color.BLUE.asRGB())));
+		redTeam = new Team(config.getString("teamOne.name", "Red Team"), Color.fromRGB(config.getInt("teamOne.color", Color.RED.asRGB())), maxOne);
+		blueTeam = new Team(config.getString("teamTwo.name", "Blue Team"), Color.fromRGB(config.getInt("teamTwo.color", Color.BLUE.asRGB())), maxTwo);
 		currentFight = false;
 		//this.exitLocation = (Location) config.get("exitLocation");
 		this.exitLocation = new Location(world, config.getInt("exit.X"), config.getInt("exit.Y"), config.getInt("exit.Z"));
@@ -154,9 +169,11 @@ public class Arena implements Listener{
 				
 			//add the player if the player is not on the red team
 			if (! redTeam.contains(player)){
-				redTeam.addPlayer(player);
-				player.sendMessage("You have joined The " + redTeam.getName());
-				blueTeam.alertPlayers(player.getDisplayName() + "has joined the " + redTeam.getName());
+				if (redTeam.addPlayer(player)) {
+					player.sendMessage("You have joined The " + redTeam.getName());
+					blueTeam.alertPlayers(player.getDisplayName() + "has joined the " + redTeam.getName());
+				}
+				return;
 			}
 			
 			//pressing the switch while already on the team signals that the player is ready.
@@ -192,9 +209,11 @@ public class Arena implements Listener{
 				
 			//add the player if the player is not on the blue team
 			if (! blueTeam.contains(player)){
-				blueTeam.addPlayer(player);
-				player.sendMessage("You have joined The " + blueTeam.getName());
-				redTeam.alertPlayers(player.getDisplayName() + "has joined the " + blueTeam.getName());
+				if (blueTeam.addPlayer(player)) {
+					player.sendMessage("You have joined The " + blueTeam.getName());
+					redTeam.alertPlayers(player.getDisplayName() + "has joined the " + blueTeam.getName());
+				}
+				return;
 			}
 			
 			//pressing the switch while already on the team signals that the player is ready
@@ -263,6 +282,8 @@ public class Arena implements Listener{
 		if (checkTeam(player)) {
 			player.teleport(coolLocation);
 			player.setHealth(20);
+			//check if the fight is now over
+			fightOver();
 		}
 	}
 	
@@ -290,24 +311,21 @@ public class Arena implements Listener{
 			//remove the dead player from the red team
 			redTeam.setDead(player);
 			if (redTeam.getNumberPlayers() != 0) {
-				redTeam.alertPlayers(player.getDisplayName() + " has been slain! " + redTeam.getNumberPlayers() + " left!");
+				redTeam.alertPlayers(player.getDisplayName() + " has been slain! " + (redTeam.getLivePlayers()) + " left!");
 				blueTeam.alertPlayers(player.getDisplayName() + " has been slain!");
 			}
 			
-			//check if the fight is now over
-			fightOver();
 			return true;
 		}
 		else if (blueTeam.contains(player)){
 			//remove the dead player from the red team
 			blueTeam.setDead(player);
 			if (blueTeam.getNumberPlayers() != 0) {
-				blueTeam.alertPlayers(player.getDisplayName() + " has been slain! " + blueTeam.getNumberPlayers() + " left!");
+				blueTeam.alertPlayers(player.getDisplayName() + " has been slain! " + blueTeam.getLivePlayers() + " left!");
 				redTeam.alertPlayers(player.getDisplayName() + " has been slain!");
 			}
 			
-			//check if the fight is now over
-			fightOver();
+			
 			return true;
 		}
 		//let it know we didn't find that player in either team
