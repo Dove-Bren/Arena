@@ -43,7 +43,7 @@ public class CommandHandler {
 			
 			//update Arena instead of making a new one
 			plugin.getArena().setTeamOneSpawn(loc);
-			
+			sender.sendMessage("New spawn center location for team one set!");
 			return true;
 		}
 		
@@ -63,6 +63,7 @@ public class CommandHandler {
 			
 			//update Arena instead of making a new one
 			plugin.getArena().setTeamTwoSpawn(loc);
+			sender.sendMessage("New spawn center location for team two set!");
 			
 			return true;
 		}
@@ -83,6 +84,7 @@ public class CommandHandler {
 			
 			//update Arena instead of making a new one
 			plugin.getArena().setTeamOneButton(loc);
+			sender.sendMessage("New spot for button one set!");
 			
 			return true;
 		}
@@ -103,6 +105,7 @@ public class CommandHandler {
 			
 			//update Arena instead of making a new one
 			plugin.getArena().setTeamTwoButton(loc);
+			sender.sendMessage("New spot for button two set!");
 			
 			return true;
 		}
@@ -125,6 +128,7 @@ public class CommandHandler {
 			
 			//update Arena instead of making a new one
 			plugin.getArena().setCoolLocation(loc);
+			sender.sendMessage("New cooldown spawn location set!");
 			
 			return true;
 		}
@@ -145,6 +149,7 @@ public class CommandHandler {
 			
 			//update Arena instead of making a new one
 			plugin.getArena().setExitLocation(loc);
+			sender.sendMessage("New exit location set!");
 			
 			return true;
 		}
@@ -154,7 +159,10 @@ public class CommandHandler {
 				plugin.getArena().playerLeave((Player) sender);
 			}
 			//console
-			sender.sendMessage("Only players can use this command");
+			else {
+				sender.sendMessage("Only players can use this command");
+			}
+			return true;
 		}
 		
 		return false;
