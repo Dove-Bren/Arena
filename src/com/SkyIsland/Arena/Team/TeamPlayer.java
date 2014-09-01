@@ -14,13 +14,23 @@ public class TeamPlayer{
 	 */
 	private boolean ready;
 	
+	/**
+	 * whether or not a team player has achknoledged the stakes of the fight
+	 */
+	private boolean acknowledge;
+	
 	private boolean alive;
 	
 	
-	public TeamPlayer(Player player, boolean ready){
+	public TeamPlayer(Player player, boolean ready, boolean acknowledge){
 		this.player = player;
 		this.ready = ready;
 		this.alive = true;
+		this.acknowledge = acknowledge;
+	}
+	
+	public TeamPlayer(Player player, boolean ready) {
+		this(player, ready, false);
 	}
 	
 	public TeamPlayer(Player player){
@@ -37,6 +47,14 @@ public class TeamPlayer{
 	
 	public void setReady(boolean ready){
 		this.ready = ready;
+	}
+	
+	public boolean isAcknowledge() {
+		return this.acknowledge;
+	}
+	
+	public void setAcknowledge(boolean acknowledge) {
+		this.acknowledge = acknowledge;
 	}
 
 	public boolean isAlive(){

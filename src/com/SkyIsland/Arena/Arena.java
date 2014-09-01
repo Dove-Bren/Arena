@@ -30,10 +30,12 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import com.SkyIsland.Arena.Team.Team;
 import com.SkyIsland.Arena.Team.TeamPlayer;
 import com.SkyIsland.Arena.Utils.ArmorSet;
+import com.SkyIsland.Arena.Utils.Timer;
 
 /**
  * class for the arena at the spawn
@@ -74,6 +76,8 @@ public class Arena implements Listener{
 	
 	private HashMap<UUID, ArmorSet> armors;
 	
+	private Timer timer;
+	
 	private Settings settings;
 	
 	private class Settings {
@@ -85,6 +89,8 @@ public class Arena implements Listener{
 		}
 
 	}
+	
+	private BukkitRunnable forceReady, forceAccept;
 
 	/**
 	 * default constructor.
@@ -100,6 +106,35 @@ public class Arena implements Listener{
 	public Arena(YamlConfiguration config) {
 		inventories = new HashMap<UUID, Set<ItemStack>>();
 		armors = new HashMap<UUID, ArmorSet>();
+		
+		
+		timer = null; //no timer currently running
+		
+		forceReady = new BukkitRunnable() {
+
+			@Override
+			public void run() {
+				redTeam.setTeamReady(true);
+				blueTeam.setTeamReady(true);
+				fightReady();	
+				timer = null;
+			}
+			
+		};
+		
+		forceAccept = new BukkitRunnable() {
+
+			@Override
+			public void run() {
+				redTeam.setTeamAcknowledge(true);
+				blueTeam.setTeamAcknowledge(true);
+				lootAcknowledge();
+				timer = null;
+			}
+			
+		};
+		
+		//TODO: CREATE FIRST MENU
 		
 		int maxOne, maxTwo;
 		maxOne = config.getInt("teamOne.max", 16);
@@ -172,6 +207,8 @@ public class Arena implements Listener{
 				if (redTeam.addPlayer(player)) {
 					player.sendMessage("You have joined The " + redTeam.getName());
 					blueTeam.alertPlayers(player.getDisplayName() + "has joined the " + redTeam.getName());
+					
+					//TODO: register player with menu
 				}
 				return;
 			}
@@ -212,6 +249,8 @@ public class Arena implements Listener{
 				if (blueTeam.addPlayer(player)) {
 					player.sendMessage("You have joined The " + blueTeam.getName());
 					redTeam.alertPlayers(player.getDisplayName() + "has joined the " + blueTeam.getName());
+					
+					//TODO: register player with menu
 				}
 				return;
 			}
@@ -241,6 +280,10 @@ public class Arena implements Listener{
 		blue = blueTeam.isReady();
 		if (red) {
 			blueTeam.alertPlayers("The " + redTeam.getName() + " is now ready to battle!");
+			if (timer == null) {
+				//no timer currently on
+				timer = new Timer((ArenaPlugin) Bukkit.getPluginManager().getPlugin("Arena"), this.forceReady, 200, true, 20);
+			}
 		}
 		if (blue) {
 			redTeam.alertPlayers("The " + blueTeam.getName() + " is now ready to battle!");
@@ -249,6 +292,17 @@ public class Arena implements Listener{
 		//if both teams are ready...
 		if (red && blue){
 			//start the fight
+			startfight();
+			//instead we move to second phase, which is git the stakes
+			//TODO: MOVE TO SECOND PAGE
+		}
+	}
+	
+	/**
+	 * checks to see if all players have acknowledged the loot and accepted
+	 */
+	public void lootAcknowledge() {
+		if (redTeam.isAcknowledge() && blueTeam.isAcknowledge()) {
 			startfight();
 		}
 	}
@@ -296,7 +350,7 @@ public class Arena implements Listener{
 		
 		Player player = event.getPlayer();
 		checkTeam(player);
-		
+		//TODO: take off of menu
 	}
 	
 	/**
@@ -581,6 +635,9 @@ public class Arena implements Listener{
 			redTeam.removePlayer(p);
 			p.teleport(exitLocation);
 			p.sendMessage("You have fled battle!");
+			
+			//TODO: unregister player from menu
+			
 			return;
 		}
 		if (this.blueTeam.contains(p)) {
@@ -595,6 +652,9 @@ public class Arena implements Listener{
 			blueTeam.removePlayer(p);
 			p.teleport(exitLocation);
 			p.sendMessage("You have fled battle!");
+			
+			//TODO: unregister player from menu
+			
 			return;
 		}
 		p.sendMessage("You aren't on a team!");
@@ -684,8 +744,18 @@ public class Arena implements Listener{
 	
 	
 	
-	
-	
+	/**
+	 * Sends the provided message to all players that are registered on a team
+	 * @param msg
+	 */
+	public void broadcastMessage(String msg) {
+		for (TeamPlayer p: redTeam.getPlayers()) {
+			p.getPlayer().sendMessage(msg);
+		}
+		for (TeamPlayer p: blueTeam.getPlayers()) {
+			p.getPlayer().sendMessage(msg);
+		}
+	}
 	
 	
 

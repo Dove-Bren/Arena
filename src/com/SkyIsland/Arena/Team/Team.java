@@ -75,6 +75,19 @@ public class Team {
 		return true;
 	}
 	
+	public boolean isAcknowledge() {
+
+		if (players.size() == 0){
+			return false;
+		}
+		for (TeamPlayer p: players){
+			if (! p.isAcknowledge()){
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	public boolean contains(TeamPlayer p){
 		return players.contains(p);
 	}
@@ -120,6 +133,30 @@ public class Team {
 				tp.setReady(true);
 				return;
 			}
+		}
+	}
+	
+	public void setAcknowledge(Player p) {
+		for (TeamPlayer tp: players){
+			if (tp.getPlayer().equals(p)){
+				tp.setAcknowledge(true);
+				return;
+			}
+		}
+	}
+	
+	/**
+	 * Sets the whole team as ready
+	 */
+	public void setTeamReady(boolean ready) {
+		for (TeamPlayer p: players) {
+			p.setReady(ready);
+		}
+	}
+	
+	public void setTeamAcknowledge(boolean acknowledge) {
+		for (TeamPlayer p: players) {
+			p.setAcknowledge(acknowledge);
 		}
 	}
 
