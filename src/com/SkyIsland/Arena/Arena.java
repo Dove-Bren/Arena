@@ -537,6 +537,51 @@ public class Arena implements Listener{
 		//last we set their weapon
 		inv.setItemInHand(new ItemStack(Material.STONE_SWORD));
 	}
+	
+	/**
+	 * Issues a request to leave the team.
+	 * <p>
+	 * This only works if there is nobody on the other team yet and the fight hasn't started.
+	 * </p>
+	 * @param p - The player trying to chicken out
+	 */
+	public void playerLeave(Player p) {
+		if (this.currentFight) {
+			//nobody can leave anyway, even if they are on the teams
+			return;
+		}
+		
+		if (this.redTeam.contains(p)) {
+			//on red team...
+			if (this.blueTeam.getNumberPlayers() != 0) {
+				//there are players on both sides
+				p.sendMessage("You can only leave the arena if nobody has joined the other side!");
+				return;
+			}
+			
+			//the player is on the red team and nobody is on the blue team. It's okay to leave
+			redTeam.removePlayer(p);
+			p.teleport(exitLocation);
+			p.sendMessage("You have fled battle!");
+			return;
+		}
+		if (this.blueTeam.contains(p)) {
+			//on red team...
+			if (this.redTeam.getNumberPlayers() != 0) {
+				//there are players on both sides
+				p.sendMessage("You can only leave the arena if nobody has joined the other side!");
+				return;
+			}
+			
+			//the player is on the red team and nobody is on the blue team. It's okay to leave
+			blueTeam.removePlayer(p);
+			p.teleport(exitLocation);
+			p.sendMessage("You have fled battle!");
+			return;
+		}
+	}
+	
+	
 
 	protected Location getExitLocation() {
 		return exitLocation;

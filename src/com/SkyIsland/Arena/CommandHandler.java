@@ -107,6 +107,14 @@ public class CommandHandler {
 			return true;
 		}
 		
+		if (cmd.getName().equalsIgnoreCase("leave")) {
+			if (sender instanceof Player) {
+				plugin.getArena().playerLeave((Player) sender);
+			}
+			//console
+			sender.sendMessage("Only players can use this command");
+		}
+		
 		return false;
 	}
 	
