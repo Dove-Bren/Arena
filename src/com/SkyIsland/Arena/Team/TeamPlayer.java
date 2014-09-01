@@ -15,7 +15,7 @@ public class TeamPlayer{
 	private boolean ready;
 	
 	/**
-	 * whether or not a team player has achknoledged the stakes of the fight
+	 * whether or not a team player has acknowledged the stakes of the fight
 	 */
 	private boolean acknowledge;
 	

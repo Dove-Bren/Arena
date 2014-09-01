@@ -83,9 +83,11 @@ public class Arena implements Listener{
 	private class Settings {
 		
 		public boolean KEEPARMOR;
+		public boolean TEAMATTACK;
 		
 		protected Settings(ConfigurationSection config) {
 			KEEPARMOR = config.getBoolean("KEEPARMOR");
+			TEAMATTACK = config.getBoolean("TEAMATTACK");
 		}
 
 	}
@@ -325,11 +327,25 @@ public class Arena implements Listener{
 	@EventHandler(priority = EventPriority.LOWEST)
     public void removePlayer(EntityDamageByEntityEvent event) {
 		
-		if (event.getEntityType() != EntityType.PLAYER) {
+		if (event.getEntityType() != EntityType.PLAYER || event.getDamager() instanceof Player) {
 			return;
 		}
 		
 		Player player = (Player) event.getEntity();
+		Player damager = (Player) event.getDamager();
+		
+		if (settings.TEAMATTACK) {
+			if (redTeam.contains(player) && redTeam.contains(damager)) {
+				//we need to cancel it
+				event.setCancelled(true);
+				return;
+			}
+			else if (blueTeam.contains(player) && blueTeam.contains(damager)) {
+				event.setCancelled(true);
+				return;
+			}
+		}
+		
 		
 		//are they about to die?
 		if (event.getDamage() >= player.getHealth())		
@@ -430,7 +446,8 @@ public class Arena implements Listener{
 			
 			//int rand = new Random().nextInt(8);
 			actualLocation = teamOneSpawn.clone();
-			actualLocation.add(Math.floor(rand.nextInt(spawnRadiusOneX + 1)), 0, Math.floor(rand.nextInt(spawnRadiusOneY + 1)));
+			//added .5 to X and Z so that players spawn in the middle of the block
+			actualLocation.add(Math.floor(rand.nextInt(spawnRadiusOneX + 1)) + .5, 0, Math.floor(rand.nextInt(spawnRadiusOneY + 1)) + .5);
 			p.getPlayer().teleport(actualLocation);
 			p.getPlayer().sendMessage("The fight has begun.");
 		}
@@ -466,7 +483,7 @@ public class Arena implements Listener{
 			
 			//int rand = new Random().nextInt(8);
 			actualLocation = teamTwoSpawn.clone();
-			actualLocation.add(Math.floor(rand.nextInt(spawnRadiusTwoX+1)), 0, Math.floor(rand.nextInt(spawnRadiusTwoY+1)));
+			actualLocation.add(Math.floor(rand.nextInt(spawnRadiusTwoX+1)) + .5, 0, Math.floor(rand.nextInt(spawnRadiusTwoY+1)) + .5);
 			p.getPlayer().teleport(actualLocation);
 			p.getPlayer().sendMessage("The fight has begun.");
 		}

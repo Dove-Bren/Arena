@@ -23,7 +23,7 @@ public class ArenaPlugin extends JavaPlugin {
 	
 	private Arena arena;
 	private YamlConfiguration config;
-	public double version = 0.15;
+	public double version = 0.16;
 	private CommandHandler handler;
 	private MenuService menuService;
 	
@@ -110,6 +110,7 @@ public class ArenaPlugin extends JavaPlugin {
 			
 			//settings
 			config.set("settings.KEEPARMOR", false);
+			config.set("settings.TEAMATTACK", false);
 			try {
 				config.save(configFile);
 			} catch (IOException e) {
