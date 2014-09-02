@@ -12,6 +12,8 @@ public class Timer {
 	private ArenaPlugin plugin;
 	private BukkitRunnable timer;
 	
+	private boolean canceled;
+	
 	/**
 	 * Creates a timer event tied to a plugin. It runs the RunnableTask after [ticks] ticks. If this timer is set to verbose, it will print out
 	 * the time remaining to all teams every [step] ticks.
@@ -39,10 +41,15 @@ public class Timer {
 			
 			//stepSize is how many we WANT to increment by. increment is how mayn we are actually going to increment by. This may change if the first step
 			//is a smaller number so that we land on a number that's evenly divisible by it
-			BukkitRunnable timer = new BukkitRunnable() {
+			timer = new BukkitRunnable() {
 
 				@Override
 				public void run() {
+					if (canceled) {
+						//emergency stop
+						cancel();
+					}
+					
 					//we set increment to a value that's not 0 only if we need to offset the count from the start.
 					if (increment != 0) {
 						elapsed += increment;
@@ -71,6 +78,9 @@ public class Timer {
 	//get
 	
 	public void cancel() {
+		
+		this.canceled = true; //incase we are unable to stop them: let them kill themselves
+		
 		try {
 			this.job.cancel();
 		}
