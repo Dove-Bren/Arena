@@ -69,7 +69,7 @@ public class MenuHandle implements ActionListener {
 		this.renderer = this.menuService.getRenderer(SupportedRenderer.InventoryRenderer.getName());
 		
 		readyMenu = setupReadyMenu();
-		//acceptMenu = setupAcceptMenu();
+		acceptMenu = setupAcceptMenu();
 		
 	}
 	
@@ -192,19 +192,21 @@ public class MenuHandle implements ActionListener {
 		
 		
 		//set brown wool inbetween
-		int i, j;
-		i = 7;
-		j = 3;
+		
+		//how many blocks is it?
+		int i = 18;
 		
 		wool = new Wool(DyeColor.BROWN);
 		
 		for (; i > 0; i--)
-		for (; j >= 2; j--) {
+		{
 			comp = new Component();
-			comp.setName("BrownWool_" + (((i-1) * 2) + j));
+			comp.setName("BrownWool_" + i);
 			comp.addAttribute(ComponentAttribute.ITEM, wool.toItemStack());
-			comp.addAttribute(ComponentAttribute.X, i);
-			comp.addAttribute(ComponentAttribute.Y, j);
+			comp.addAttribute(ComponentAttribute.X, 0);
+			comp.addAttribute(ComponentAttribute.Y, 2);
+			
+			menu.addComponent(comp);
 		}
 		
 		
@@ -342,6 +344,7 @@ public class MenuHandle implements ActionListener {
 				}
 				
 				arena.getTeamPlayer(Bukkit.getPlayer(playerName)).setAcknowledge(true);
+				arena.fightAccept();
 				
 				updateAcceptMenu();
 				
@@ -428,6 +431,10 @@ public class MenuHandle implements ActionListener {
 		acceptMenu.addComponent(comp);
 		updateAcceptMenu();
 	}
+	
+	public void removePlayerAccept(UUID player) {
+		acceptMenu.removePlayer(player);
+	}
 
 	@Override
 	public void playerAdded(UUID uuid) {
@@ -476,6 +483,7 @@ public class MenuHandle implements ActionListener {
 			//TODO WHAT IF INVENTORY FILLS UP?
 			
 			Player player = Bukkit.getPlayer(playerName);
+			plugin.getLogger().info("inventory click! Slot #: " + slot);
 			
 			if (player.getInventory().getItem(slot) == null) {
 				return;

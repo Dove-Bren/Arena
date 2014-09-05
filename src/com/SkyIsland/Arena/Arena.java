@@ -83,6 +83,8 @@ public class Arena implements Listener{
 	
 	private Settings settings;
 	
+	private boolean tryingToAccept;
+	
 	private class Settings {
 		
 		public boolean KEEPARMOR;
@@ -116,6 +118,7 @@ public class Arena implements Listener{
 		inventories = new HashMap<UUID, Set<ItemStack>>();
 		armors = new HashMap<UUID, ArmorSet>();
 		
+		tryingToAccept = false;
 		
 		timer = null; //no timer currently running
 		
@@ -224,7 +227,7 @@ public class Arena implements Listener{
 					}
 					
 					player.sendMessage("You have joined The " + redTeam.getName());
-					blueTeam.alertPlayers(player.getDisplayName() + "has joined the " + redTeam.getName());
+					blueTeam.alertPlayers(player.getDisplayName() + " has joined the " + redTeam.getName());
 					
 					handle.addPlayerReady(player.getUniqueId(), 1); //redteam = team 1
 				}
@@ -343,9 +346,51 @@ public class Arena implements Listener{
 		//if both teams are ready...
 		if (red && blue){
 			//start the fight
-			startfight();
+			//startfight();
 			//instead we move to second phase, which is git the stakes
 			//TODO: MOVE TO SECOND PAGE
+			startBets();
+		}
+	}
+	
+	/**
+	 * makes sure both teams have acknowledges the trade
+	 */
+	public void fightAccept() {
+		boolean red, blue;
+		red = redTeam.isAcknowledge();
+		blue = blueTeam.isAcknowledge();
+		
+		if (red & blue) {
+			//both teams have fully accepted the loot
+			startfight();
+			return;
+		}
+		
+		if (red) {
+			//blue team is not ready but red team is. 
+			this.broadcastMessage("The " + redTeam.getName() + " has accepted the terms and is ready to begin the fight!");
+			
+			//start the countdown timer
+			if (timer == null) {
+				//no timer currently on
+				timer = new Timer((ArenaPlugin) Bukkit.getPluginManager().getPlugin("Arena"), this.forceAccept, 200, true, 20);
+				}
+			
+			return;
+		}
+		
+		if (blue) {
+			this.broadcastMessage("The " + blueTeam.getName() + " has accepted the terms and is ready to begin the fight!");
+			
+
+			//start the countdown timer
+			if (timer == null) {
+				//no timer currently on
+				timer = new Timer((ArenaPlugin) Bukkit.getPluginManager().getPlugin("Arena"), this.forceAccept, 200, true, 20);
+				}
+			
+			return;
 		}
 	}
 	
@@ -421,7 +466,6 @@ public class Arena implements Listener{
 		
 		Player player = event.getPlayer();
 		checkTeam(player);
-		//TODO: take off of menu
 	}
 	
 	/**
@@ -504,9 +548,7 @@ public class Arena implements Listener{
 				suitUp(p, redTeam);
 			}
 			
-			//remove from menu
-			//TODO: change to the acknoledge menu
-			handle.removePlayerReady(p.getPlayer().getUniqueId());
+			handle.removePlayerAccept(p.getPlayer().getUniqueId());
 			
 			//int rand = new Random().nextInt(8);
 			actualLocation = teamOneSpawn.clone();
@@ -544,10 +586,7 @@ public class Arena implements Listener{
 				
 				suitUp(p, blueTeam);
 			}
-			
-			//remove from menu
-			//TODO: change to the acknoledge menu
-			handle.removePlayerReady(p.getPlayer().getUniqueId());
+			handle.removePlayerAccept(p.getPlayer().getUniqueId());
 			
 			//int rand = new Random().nextInt(8);
 			actualLocation = teamTwoSpawn.clone();
@@ -954,6 +993,30 @@ public class Arena implements Listener{
 		}
 		
 		return team;
+	}
+	
+	private void startBets() {
+		
+		if (this.tryingToAccept) {
+			return;
+		}
+		
+		this.tryingToAccept = true;
+		
+		redTeam.setTeamAcknowledge(false);
+		blueTeam.setTeamAcknowledge(false);
+		
+		
+		
+		for (TeamPlayer p : redTeam.getPlayers()) {
+			//add players to new menu, and delete from old
+			handle.removePlayerReady(p.getPlayer().getUniqueId());
+			handle.addPlayerAccept(p.getPlayer().getUniqueId(), 1);
+		}
+		for (TeamPlayer p : blueTeam.getPlayers()) {
+			handle.removePlayerReady(p.getPlayer().getUniqueId());
+			handle.addPlayerAccept(p.getPlayer().getUniqueId(), 2);
+		}
 	}
 
 }
