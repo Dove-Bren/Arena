@@ -98,19 +98,7 @@ public class Arena implements Listener{
 	}
 	
 	private BukkitRunnable forceReady, forceAccept;
-	
-	
-	
-	/**
-	 * default constructor.
-	 */
-//	public Arena(){
-//		this("Red Team", "Blue Team", new Location(Bukkit.getWorld("HomeWorld"), -106, 71, 9136));
-////		redTeam = new Team("Red Team");
-////		blueTeam = new Team("Blue Team");
-////		currentFight = false;
-////		exitLocation = new Location(Bukkit.getWorld("HomeWorld"), -106, 71, 9136);
-//	}
+
 	
 	public Arena(YamlConfiguration config, MenuHandle handle) {
 		this.handle = handle;
@@ -163,7 +151,7 @@ public class Arena implements Listener{
 		}
 		
 		
-		World world = Bukkit.getWorld(UUID.fromString((String) config.get("world")));
+		World world = Bukkit.getWorld(config.getString("world"));
 		redTeam = new Team(config.getString("teamOne.name", "Red Team"), Color.fromRGB(config.getInt("teamOne.color", Color.RED.asRGB())), maxOne);
 		blueTeam = new Team(config.getString("teamTwo.name", "Blue Team"), Color.fromRGB(config.getInt("teamTwo.color", Color.BLUE.asRGB())), maxTwo);
 		currentFight = false;
