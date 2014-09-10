@@ -28,9 +28,7 @@ import com.m0pt0pmatt.menuservice.api.ComponentAttribute;
 import com.m0pt0pmatt.menuservice.api.ComponentType;
 import com.m0pt0pmatt.menuservice.api.Menu;
 import com.m0pt0pmatt.menuservice.api.MenuAttribute;
-import com.m0pt0pmatt.menuservice.api.MenuService;
-import com.m0pt0pmatt.menuservice.api.Renderer;
-import com.m0pt0pmatt.menuservice.api.SupportedRenderer;
+import com.m0pt0pmatt.menuservice.api.MenuType;
 
 /**
  * The portal to the menu system for the Arena
@@ -60,15 +58,10 @@ public class MenuHandle implements ActionListener {
 	private ArenaPlugin plugin;
 	private String name = "Arena Action Listener";
 	private Menu readyMenu, acceptMenu, lootMenu;
-	private Renderer renderer;
-	private MenuService menuService;
 	
-	public MenuHandle(ArenaPlugin plugin, MenuService menuService) {
+	public MenuHandle(ArenaPlugin plugin) {
 		this.plugin = plugin;
-		this.menuService = menuService;
 		
-		//get inventory renderer
-		this.renderer = this.menuService.getRenderer(SupportedRenderer.InventoryRenderer.getName());
 		
 		readyMenu = setupReadyMenu();
 		acceptMenu = setupAcceptMenu();
@@ -472,7 +465,7 @@ public class MenuHandle implements ActionListener {
 		
 		
 		updateReadyMenu();
-		readyMenu.addPlayer(player, this.renderer);
+		readyMenu.addPlayer(player, MenuType.INVENTORY);
 	}
 	
 	public void removePlayerReady(UUID player) {
@@ -480,7 +473,7 @@ public class MenuHandle implements ActionListener {
 	}
 	
 	public void addPlayerAccept(UUID player, int team) {
-		acceptMenu.addPlayer(player, renderer);
+		acceptMenu.addPlayer(player, MenuType.INVENTORY);
 	}
 	
 	public void addItemAccept(UUID player, ItemStack item, int team) {
