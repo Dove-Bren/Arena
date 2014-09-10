@@ -2,7 +2,9 @@ package com.SkyIsland.Arena;
 
 //import java.util.Random;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
@@ -85,6 +87,10 @@ public class Arena implements Listener{
 	
 	private boolean tryingToAccept;
 	
+	private ArrayList<TeamPlayer> playersInOrder;
+	
+	private int turnIndex;
+	
 	private class Settings {
 		
 		public boolean KEEPARMOR;
@@ -105,6 +111,8 @@ public class Arena implements Listener{
 		
 		inventories = new HashMap<UUID, Set<ItemStack>>();
 		armors = new HashMap<UUID, ArmorSet>();
+		
+		playersInOrder = null;
 		
 		tryingToAccept = false;
 		
@@ -605,8 +613,10 @@ public class Arena implements Listener{
 	 */
 	private void endFight(){
 		
+		boolean red = redTeam.isAlive(), blue = blueTeam.isAlive();
+		
 		//only one team must stand
-		if (redTeam.isAlive()){
+		if (red){
 			redTeam.alertPlayers("Congratulations, your team won!");
 			blueTeam.alertPlayers("Your team lost. Better luck next time.");
 		}
@@ -672,14 +682,24 @@ public class Arena implements Listener{
 			p.getPlayer().teleport(exitLocation);
 		}
 		
-		//remove players from the teams
-		redTeam.getPlayers().clear();
-		blueTeam.getPlayers().clear();
+		//we don't do this stuff yet, as we need to give out rewards
+//		//remove players from the teams
+//		redTeam.getPlayers().clear();
+//		blueTeam.getPlayers().clear();
+//		
+//		//end the fight
+//		currentFight = false;
+//		
+//		handle.reInit();
 		
-		//end the fight
-		currentFight = false;
+		//instead, we start looting.
+		if (red) {
+			startLoot(redTeam);
+		}
+		else {
+			startLoot(blueTeam);
+		}
 		
-		handle.reInit();
 	}
 
 	private boolean blueSwitchPressed(PlayerInteractEvent event) {
@@ -1016,6 +1036,56 @@ public class Arena implements Listener{
 			handle.removePlayerReady(p.getPlayer().getUniqueId());
 			handle.addPlayerAccept(p.getPlayer().getUniqueId(), 2);
 		}
+	}
+	
+	/**
+	 * method to be called by the menu handle that tells it the player has made a selection and it can move on.
+	 */
+	public void processSelection() {
+		if (this.playersInOrder == null) {
+			//this means that something went really wrong, or we haven't started the looting thing and are getting
+			//wrongful messages
+			return;
+		}
+		
+		handle.endLootturn(playersInOrder.get(turnIndex));
+		turnIndex += 1;
+		handle.setLootTurn(playersInOrder.get(turnIndex));
+		
+	}
+	
+	/**
+	 * this method is to be called by the menu handle when there are no more items to be looted
+	 */
+	public void endLoot() {
+		playersInOrder = null;
+		this.currentFight = false;
+		handle.reInit();
+		redTeam.getPlayers().clear();
+		blueTeam.getPlayers().clear();
+	}
+	
+	private void startLoot(Team winningTeam) {
+		//tell the menu service to create a menu with teh winning team
+		handle.setupLootMenu(winningTeam);
+		
+		//decide the order to pick based on kill count
+		ArrayList<TeamPlayer> players = sortOnKills(winningTeam);
+		this.playersInOrder = players;
+		
+		this.turnIndex = 0;
+		
+		handle.setLootTurn(players.get(0));
+	}
+	
+	private ArrayList<TeamPlayer> sortOnKills(Team winningTeam) {
+		ArrayList<TeamPlayer> players = new ArrayList<TeamPlayer>();
+		
+		players.addAll(winningTeam.getPlayers());
+		
+		Collections.sort(players);
+		
+		return players;
 	}
 
 }

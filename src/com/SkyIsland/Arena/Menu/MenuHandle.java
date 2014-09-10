@@ -210,12 +210,31 @@ public class MenuHandle implements ActionListener {
 		return menu;
 	}
 	
-	public Menu setupLootMenu(Team winningTeam) {
-		Menu menu = new Menu();
+	public void setupLootMenu(Team winningTeam) {
+		lootMenu = new Menu();
 		
 		//set the menu size. We set three, because there can only be 18 items won per match. This gives us
 		//two rows to display our up to 18 participants
-		menu.addAttribute(MenuAttribute.SIZE, 4);
+		lootMenu.addAttribute(MenuAttribute.SIZE, 4);
+		
+		//fetch all items that were won
+		Map<String, Component> betComps = acceptMenu.getComponents();
+		for (String title : betComps.keySet()) {
+			//if it starts with "PlayerItem_" then it's an item
+			if (title.startsWith("LootItem_")) {
+				//it's an item and it needs to be added here
+				Component oldComp, comp = new Component();
+				oldComp = betComps.get(title);
+				comp.setName(oldComp.getName());
+				comp.setListener(this);
+				comp.setType(ComponentType.BUTTON);
+				comp.addAttribute(ComponentAttribute.ITEM, oldComp.getAttribute(ComponentAttribute.ITEM));
+				comp.addAttribute(ComponentAttribute.X, 0);
+				comp.addAttribute(ComponentAttribute.Y, 0); //start in top-right corner
+				
+				lootMenu.addComponent(comp);
+			}
+		}
 		
 		for (TeamPlayer tp : winningTeam.getPlayers()) {	
 			//We make a button for each player signifying if it's their pick
@@ -229,10 +248,13 @@ public class MenuHandle implements ActionListener {
 			comp.addAttribute(ComponentAttribute.X, 0);
 			comp.addAttribute(ComponentAttribute.Y, 2); //top-left corner of the bottom two rows.
 			
-			menu.addComponent(comp);
+			lootMenu.addComponent(comp);
+			
+			//also add this player to the menu
+			lootMenu.addPlayer(tp.getPlayer().getUniqueId(), MenuType.INVENTORY);
 		}
 		
-		return menu;
+		updateLootMenu();
 	}
 	
 	/**
@@ -403,7 +425,7 @@ public class MenuHandle implements ActionListener {
 				UUID itemOwner = UUID.fromString((String) component.getAttribute("Owner"));
 				if (playerName.compareTo(itemOwner) == 0) {
 					//the clicker owns this object.			
-					this.removeAcceptItem(playerName, component);	
+					this.itemAwardPlayer(playerName, component);	
 					acceptMenu.removeComponent(component);
 					updateAcceptMenu();
 				}
@@ -439,6 +461,33 @@ public class MenuHandle implements ActionListener {
 				}
 				
 				updateAcceptMenu();
+			}
+			else if (component.getName().startsWith("LootItem_")) {
+				//this is a loot item that someone is trying to claim.
+				
+				Arena arena;
+				
+				arena = plugin.getArena();
+				
+
+				
+				//make sure it's their turn. This is handled by arena
+				if (arena.getTeamPlayer(Bukkit.getPlayer(playerName)).isPicking()) {
+					//it is their turn. Let them have it
+					itemAwardPlayer(playerName, component);
+					
+					//remove componenet from menu
+					menu.removeComponent(component);
+					
+					if (menu.getComponents().isEmpty()) {
+						arena.endLoot();
+					}
+					else {
+						arena.processSelection();
+					}
+					
+					return;
+				}
 			}
 		}
 	}
@@ -559,10 +608,12 @@ public class MenuHandle implements ActionListener {
 	
 	/**
 	 * This method handles when a player wishes to reclaim an item they had previously put up as a bet.
-	 * It handles putting the item back in the player's inventory
+	 * This method ALSO handles when a player is picking a prize.
+	 * It handles putting the item in the player's inventory.
+	 * It does NOT handle checking to make sure it's the players (in the case of reclaiming)
 	 * @param component
 	 */
-	public void removeAcceptItem(UUID player, Component component) {
+	public void itemAwardPlayer(UUID player, Component component) {
 		//First, unwrap the item from the component
 		ItemStack item = cashItem(player, component);
 		

@@ -2,7 +2,7 @@ package com.SkyIsland.Arena.Team;
 
 import org.bukkit.entity.Player;
 
-public class TeamPlayer{
+public class TeamPlayer implements Comparable<TeamPlayer>{
 	
 	/*
 	 * the player which the TeamPlayer represents
@@ -21,6 +21,8 @@ public class TeamPlayer{
 	
 	private boolean alive;
 	
+	private boolean picking;
+	
 	private int kills;
 	
 	
@@ -30,6 +32,7 @@ public class TeamPlayer{
 		this.alive = true;
 		this.acknowledge = acknowledge;
 		this.kills = 0;
+		this.picking = false;
 	}
 	
 	public TeamPlayer(Player player, boolean ready) {
@@ -46,6 +49,10 @@ public class TeamPlayer{
 	
 	public boolean isReady(){
 		return ready;
+	}
+	
+	public boolean isPicking() {
+		return picking;
 	}
 	
 	public int getKills() {
@@ -69,6 +76,10 @@ public class TeamPlayer{
 		this.ready = ready;
 	}
 	
+	public void setPicking(boolean picking) {
+		this.picking = picking;
+	}
+	
 	public boolean isAcknowledge() {
 		return this.acknowledge;
 	}
@@ -87,6 +98,17 @@ public class TeamPlayer{
 	
 	public void setDead(){
 		alive = false;
+	}
+
+	@Override
+	/**
+	 * compares two team players based on kill count
+	 * @param o
+	 * @return
+	 */
+	public int compareTo(TeamPlayer o) {
+		
+		return (this.kills - ((TeamPlayer) o).getKills());
 	}
 	
 }
