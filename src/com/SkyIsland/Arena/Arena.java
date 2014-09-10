@@ -997,6 +997,7 @@ public class Arena implements Listener{
 		
 		
 		for (TeamPlayer p : redTeam.getPlayers()) {
+			
 			//add players to new menu, and delete from old
 			handle.removePlayerReady(p.getPlayer().getUniqueId());
 			handle.addPlayerAccept(p.getPlayer().getUniqueId(), 1);

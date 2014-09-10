@@ -128,6 +128,8 @@ public class MenuHandle implements ActionListener {
 	private Menu setupAcceptMenu() {
 		Menu menu = new Menu();
 		
+		menu.addAttribute(MenuAttribute.SIZE, 6);
+		
 		Component comp;
 		
 		comp = new Component();
