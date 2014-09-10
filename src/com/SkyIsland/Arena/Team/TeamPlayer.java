@@ -21,12 +21,15 @@ public class TeamPlayer{
 	
 	private boolean alive;
 	
+	private int kills;
+	
 	
 	public TeamPlayer(Player player, boolean ready, boolean acknowledge){
 		this.player = player;
 		this.ready = ready;
 		this.alive = true;
 		this.acknowledge = acknowledge;
+		this.kills = 0;
 	}
 	
 	public TeamPlayer(Player player, boolean ready) {
@@ -43,6 +46,23 @@ public class TeamPlayer{
 	
 	public boolean isReady(){
 		return ready;
+	}
+	
+	public int getKills() {
+		return kills;
+	}
+	
+	public void setKills(int kills) {
+		this.kills = kills;
+	}
+	
+	/**
+	 * Adds 1 to this player's kill count
+	 */
+	public void addKill() {
+		kills += 1;
+		this.player.sendMessage("Nice kill!");
+		player.sendMessage("Current kill count: " + kills);
 	}
 	
 	public void setReady(boolean ready){

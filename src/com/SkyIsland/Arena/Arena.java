@@ -137,14 +137,14 @@ public class Arena implements Listener{
 		
 		int maxOne, maxTwo;
 		maxOne = config.getInt("teamOne.max", 16);
-		if (maxOne > 20 || maxOne < 1 ) {
+		if (maxOne > 18 || maxOne < 1 ) {
 			//invalid max
 			Bukkit.getPluginManager().getPlugin("Arena").getLogger().info("Invalid max size of team one!\n\n");
 			maxOne = 16;
 		}
 		
 		maxTwo = config.getInt("teamTwo.max", 16);
-		if (maxTwo > 20 || maxTwo < 1 ) {
+		if (maxTwo > 18 || maxTwo < 1 ) {
 			//invalid max
 			Bukkit.getPluginManager().getPlugin("Arena").getLogger().info("Invalid max size of team two!\n\n");
 			maxTwo = 16;
@@ -440,6 +440,10 @@ public class Arena implements Listener{
 			
 			
 			player.setHealth(20);
+			
+			//award the killer a kill
+			this.getTeamPlayer(player).addKill();
+			
 			//check if the fight is now over
 			fightOver();
 		}
@@ -987,6 +991,12 @@ public class Arena implements Listener{
 		
 		if (this.tryingToAccept) {
 			return;
+		}
+		
+		if (timer != null) {
+			System.out.println("Trying to cancel timer...");
+			timer.cancel();
+			timer = null;
 		}
 		
 		this.tryingToAccept = true;

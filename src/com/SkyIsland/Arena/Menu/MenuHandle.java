@@ -13,12 +13,14 @@ import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.Wool;
 
 import com.SkyIsland.Arena.Arena;
 import com.SkyIsland.Arena.ArenaPlugin;
 import com.SkyIsland.Arena.Team.Team;
+import com.SkyIsland.Arena.Team.TeamPlayer;
 import com.m0pt0pmatt.menuservice.api.Action;
 import com.m0pt0pmatt.menuservice.api.ActionListener;
 import com.m0pt0pmatt.menuservice.api.Component;
@@ -57,7 +59,7 @@ public class MenuHandle implements ActionListener {
 	
 	private ArenaPlugin plugin;
 	private String name = "Arena Action Listener";
-	private Menu readyMenu, acceptMenu;
+	private Menu readyMenu, acceptMenu, lootMenu;
 	private Renderer renderer;
 	private MenuService menuService;
 	
@@ -131,51 +133,43 @@ public class MenuHandle implements ActionListener {
 		menu.addAttribute(MenuAttribute.SIZE, 6);
 		
 		Component comp;
-		
 		comp = new Component();
-		
 		//setup first indication block
 		comp.setName("AcceptIndicatorOne");
-		
 		Wool wool = new Wool(DyeColor.WHITE);
 		comp.addAttribute(ComponentAttribute.ITEM, wool.toItemStack());
-		
 		comp.addAttribute(ComponentAttribute.TITLE, "Team One Status");
-		
 		comp.addAttribute(ComponentAttribute.X, 0);
 		comp.addAttribute(ComponentAttribute.Y, 2);
-		
 		menu.addComponent(comp);
+
 		
+		comp = new Component();
 		//start second indication block
 		comp.setName("AcceptIndicatorTwo");
-		
 		wool = new Wool(DyeColor.WHITE);
 		comp.addAttribute(ComponentAttribute.ITEM, wool.toItemStack());
-		
 		comp.addAttribute(ComponentAttribute.TITLE, "Team Two Status");
-		
 		comp.addAttribute(ComponentAttribute.X, 0);
 		comp.addAttribute(ComponentAttribute.Y, 3);
-		
 		menu.addComponent(comp);
+
 		
+		comp = new Component();
 		//start Accept block
 		comp.setName("AcceptButton");
-		
 		wool = new Wool(DyeColor.LIME);
 		comp.addAttribute(ComponentAttribute.ITEM, wool.toItemStack());
-		
 		comp.addAttribute(ComponentAttribute.TITLE, "Accept");
-		
 		comp.addAttribute(ComponentAttribute.X, 8);
 		comp.addAttribute(ComponentAttribute.Y, 3);
 		
 		//regist as listener
 		comp.setListener(this);
-		
 		menu.addComponent(comp);
+
 		
+		comp = new Component();
 		//start Refuse block
 		comp.setName("WithdrawButton");
 		
@@ -196,18 +190,24 @@ public class MenuHandle implements ActionListener {
 		//set brown wool inbetween
 		
 		//how many blocks is it?
-		int i = 18;
+		
 		
 		wool = new Wool(DyeColor.BROWN);
 		
-		for (; i > 0; i--)
+		for (int i = 0; i < 7; i++)
 		{
 			comp = new Component();
 			comp.setName("BrownWool_" + i);
 			comp.addAttribute(ComponentAttribute.ITEM, wool.toItemStack());
-			comp.addAttribute(ComponentAttribute.X, 0);
+			comp.addAttribute(ComponentAttribute.X, 1);
 			comp.addAttribute(ComponentAttribute.Y, 2);
+			menu.addComponent(comp);
 			
+			comp = new Component();
+			comp.setName("BrownWool_" + i + 8);
+			comp.addAttribute(ComponentAttribute.ITEM, wool.toItemStack());
+			comp.addAttribute(ComponentAttribute.X, 1);
+			comp.addAttribute(ComponentAttribute.Y, 3);
 			menu.addComponent(comp);
 		}
 		
@@ -215,6 +215,78 @@ public class MenuHandle implements ActionListener {
 		
 		
 		return menu;
+	}
+	
+	public Menu setupLootMenu(Team winningTeam) {
+		Menu menu = new Menu();
+		
+		//set the menu size. We set three, because there can only be 18 items won per match. This gives us
+		//two rows to display our up to 18 participants
+		menu.addAttribute(MenuAttribute.SIZE, 4);
+		
+		for (TeamPlayer tp : winningTeam.getPlayers()) {	
+			//We make a button for each player signifying if it's their pick
+			Component comp = new Component();
+			comp.setName("TurnIndicator_" + tp.getPlayer().getUniqueId().toString());
+			comp.setType(ComponentType.LABEL);
+			comp.addAttribute(ComponentAttribute.TITLE, tp.getPlayer().getDisplayName());
+			//default to nt your turn, which is regular glass pane
+			comp.addAttribute(ComponentAttribute.ITEM, new ItemStack(Material.THIN_GLASS));
+			//set position
+			comp.addAttribute(ComponentAttribute.X, 0);
+			comp.addAttribute(ComponentAttribute.Y, 2); //top-left corner of the bottom two rows.
+			
+			menu.addComponent(comp);
+		}
+		
+		return menu;
+	}
+	
+	/**
+	 * Marks the player as the one who can claim a prize.
+	 * @param player - the TeamPlayer who is up next
+	 */
+	public void setLootTurn(TeamPlayer player) {
+		Component comp;
+		
+		//search for the component corresponding to this player
+		Map<String, Component> comps = lootMenu.getComponents();
+		comp = comps.get("TurnIndicator_" + player.getPlayer().getUniqueId());
+		
+		//make sure we found a matching component
+		if (comp == null) {
+			return;
+		}
+		
+		//generate new wool block
+		Wool wool = new Wool(DyeColor.GREEN);
+		comp.addAttribute(ComponentAttribute.ITEM, wool.toItemStack());
+		
+		updateLootMenu();
+	}
+	
+	/**
+	 * The counterpart to {@link com.SkyIsland.Arena.Menu.MenuHandle#setLootTurn(TeamPlayer) setLootTurn}, this method
+	 * marks it as no longer the player's turn and resets the componenet to what it should be.
+	 * @param player
+	 */
+	public void endLootturn(TeamPlayer player) {
+		Component comp;
+		
+		//do the same stuff as setLootTurn
+		
+		//search for the component corresponding to this player
+		Map<String, Component> comps = lootMenu.getComponents();
+		comp = comps.get("TurnIndicator_" + player.getPlayer().getUniqueId());
+				
+		//make sure we found a matching component
+		if (comp == null) {
+			return;
+		}
+		
+		comp.addAttribute(ComponentAttribute.ITEM, new ItemStack(Material.THIN_GLASS));
+		
+		updateLootMenu();
 	}
 	
 	
@@ -255,6 +327,10 @@ public class MenuHandle implements ActionListener {
 		
 		
 		acceptMenu.update();
+	}
+	
+	public void updateLootMenu() {
+		lootMenu.update();
 	}
 	
 	@Override
@@ -328,9 +404,16 @@ public class MenuHandle implements ActionListener {
 				arena.playerLeave(Bukkit.getPlayer(playerName));
 			}
 			else if (component.getName().startsWith("PlayerItem_")) {
-				//it's a player item being left click'ed, meaning withdrawn
-				acceptMenu.removeComponent(component);
-				updateAcceptMenu();
+				//it's a player item being left click'ed, meaning withdrawn.
+				
+				//first, we check if the item belongs to the player
+				UUID itemOwner = UUID.fromString((String) component.getAttribute("Owner"));
+				if (playerName.compareTo(itemOwner) == 0) {
+					//the clicker owns this object.			
+					this.removeAcceptItem(playerName, component);	
+					acceptMenu.removeComponent(component);
+					updateAcceptMenu();
+				}
 			}
 			else if (component.getName().equalsIgnoreCase("AcceptButton")) {
 				//this player has accepted the barter
@@ -407,24 +490,25 @@ public class MenuHandle implements ActionListener {
 		comp.setListener(this);
 		Random rand = new Random();
 		comp.setName("PlayerItem_" + player.toString() + (Bukkit.getMaxPlayers() * rand.nextInt())); //generate SOMETHING that starts with PlayerItem_
+		
+		//add a component named Owner that stores the UUID of the owner
+		comp.addAttribute("Owner", player.toString());
+		
 		ItemMeta meta = item.getItemMeta();
 		List<String> lore = meta.getLore();
 		if (lore == null) {
 			lore = new LinkedList<String>();
 		}
 		
-		lore.add(0, meta.getDisplayName());
+		lore.add(0, Bukkit.getPlayer(player).getDisplayName());
 		meta.setLore(lore);
 		//sets the changes
 		
-		meta.setDisplayName( Bukkit.getPlayer(player).getDisplayName()  );
-		//changes the display name to be which player put it up
+		
 		item.setItemMeta(meta);
 		
 		//finally, set the item
 		comp.addAttribute(ComponentAttribute.ITEM, item);
-		
-		comp.addAttribute(ComponentAttribute.TITLE, Bukkit.getPlayer(player).getDisplayName());
 		
 		comp.addAttribute(ComponentAttribute.X, 0);
 		comp.addAttribute(ComponentAttribute.Y, 4 * (team - 1));
@@ -432,6 +516,75 @@ public class MenuHandle implements ActionListener {
 		
 		acceptMenu.addComponent(comp);
 		updateAcceptMenu();
+	}
+	
+	/**
+	 * unwraps the item stored in the component of the accept menu.
+	 * This method specifically undoes some information and meta-data wrapping that is done to make the
+	 * menu work correctly. It returns the item just like it was given to the method {@link com.SkyIsland.Arena.Menu.MenuHandle#addItemAccept addItemAccept}
+	 * @param player
+	 * @param itemComponent
+	 * @return
+	 */
+	public ItemStack cashItem(UUID player, Component itemComponent) {
+
+		ItemStack item;
+		
+		item = (ItemStack) itemComponent.getAttribute(ComponentAttribute.ITEM);
+		
+		if (item == null) {
+			return null;
+		}
+		
+		
+		ItemMeta meta = item.getItemMeta();
+		
+		List<String> lore = meta.getLore(); //this had better not be null, as it should at least have the player name
+		
+		if (lore == null) {
+			//something bad happened
+			//but we assume that it belongs to teh player. We do print out an error report though
+			
+			
+			plugin.getLogger().info("!!! Encountered an invalid object when cashing an item in in the arena !!!" + 
+			"\n\n\nItem in question: " + item.getItemMeta().getDisplayName() + "   Which was awarded to: "  +
+					Bukkit.getPlayer(player).getDisplayName() + " <" + player.toString() + ">\n"
+					+ "This belongs to: " + Bukkit.getPlayer(UUID.fromString((String) itemComponent.getAttribute("Owner")))
+					+ " <" + (String) itemComponent.getAttribute("Owner") + ">\n\n");
+			return item;
+		}
+		
+		//assume the first string in the lore is the player name. return cdr(lore)
+		lore = lore.subList(1, lore.size() - 1);
+		
+		meta.setLore(lore);
+		
+		item.setItemMeta(meta);
+		
+		return item;
+	}
+	
+	/**
+	 * This method handles when a player wishes to reclaim an item they had previously put up as a bet.
+	 * It handles putting the item back in the player's inventory
+	 * @param component
+	 */
+	public void removeAcceptItem(UUID player, Component component) {
+		//First, unwrap the item from the component
+		ItemStack item = cashItem(player, component);
+		
+		if (item == null) {
+			return;
+			//cry
+		}
+		
+		//next, get inventory
+		PlayerInventory inv = Bukkit.getPlayer(player).getInventory();
+		
+		//now add it to inventory
+		
+		inv.addItem(item);
+		
 	}
 	
 	public void removePlayerAccept(UUID player) {
@@ -495,11 +648,13 @@ public class MenuHandle implements ActionListener {
 			if (plugin.getArena().getTeam(player) == plugin.getArena().redTeam) {
 				//:( it hurts me ---^
 				//on red team
-				addItemAccept(playerName, player.getInventory().getItem(slot), 1);
+				addItemAccept(playerName, player.getInventory().getItem(slot).clone(), 1);
+				Bukkit.getPlayer(playerName).getInventory().clear(slot);
 				return;
 			}
 			if (plugin.getArena().getTeam(player) == plugin.getArena().blueTeam) {
-				addItemAccept(playerName, player.getInventory().getItem(slot), 2);				
+				addItemAccept(playerName, player.getInventory().getItem(slot).clone(), 2);	
+				Bukkit.getPlayer(playerName).getInventory().clear(slot);
 				return;
 			}
 		}
