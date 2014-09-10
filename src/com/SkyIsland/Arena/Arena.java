@@ -32,6 +32,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import com.SkyIsland.Arena.Menu.MenuHandle;
 import com.SkyIsland.Arena.Team.Team;
 import com.SkyIsland.Arena.Team.TeamPlayer;
 import com.SkyIsland.Arena.Utils.ArmorSet;
@@ -47,12 +48,12 @@ public class Arena implements Listener{
 	/**
 	 * the red team
 	 */
-	private Team redTeam;
+	public Team redTeam;
 	
 	/**
 	 * the blue team
 	 */
-	private Team blueTeam;
+	public Team blueTeam;
 	
 	/**
 	 * whether or not a fight is currently happening
@@ -78,7 +79,11 @@ public class Arena implements Listener{
 	
 	private Timer timer;
 	
+	private MenuHandle handle;
+	
 	private Settings settings;
+	
+	private boolean tryingToAccept;
 	
 	private class Settings {
 		
@@ -93,7 +98,9 @@ public class Arena implements Listener{
 	}
 	
 	private BukkitRunnable forceReady, forceAccept;
-
+	
+	
+	
 	/**
 	 * default constructor.
 	 */
@@ -105,10 +112,13 @@ public class Arena implements Listener{
 ////		exitLocation = new Location(Bukkit.getWorld("HomeWorld"), -106, 71, 9136);
 //	}
 	
-	public Arena(YamlConfiguration config) {
+	public Arena(YamlConfiguration config, MenuHandle handle) {
+		this.handle = handle;
+		
 		inventories = new HashMap<UUID, Set<ItemStack>>();
 		armors = new HashMap<UUID, ArmorSet>();
 		
+		tryingToAccept = false;
 		
 		timer = null; //no timer currently running
 		
@@ -136,18 +146,17 @@ public class Arena implements Listener{
 			
 		};
 		
-		//TODO: CREATE FIRST MENU
 		
 		int maxOne, maxTwo;
 		maxOne = config.getInt("teamOne.max", 16);
-		if (maxOne > 64 || maxOne < 1 ) {
+		if (maxOne > 20 || maxOne < 1 ) {
 			//invalid max
 			Bukkit.getPluginManager().getPlugin("Arena").getLogger().info("Invalid max size of team one!\n\n");
 			maxOne = 16;
 		}
 		
 		maxTwo = config.getInt("teamTwo.max", 16);
-		if (maxTwo > 64 || maxTwo < 1 ) {
+		if (maxTwo > 20 || maxTwo < 1 ) {
 			//invalid max
 			Bukkit.getPluginManager().getPlugin("Arena").getLogger().info("Invalid max size of team two!\n\n");
 			maxTwo = 16;
@@ -207,10 +216,20 @@ public class Arena implements Listener{
 			//add the player if the player is not on the red team
 			if (! redTeam.contains(player)){
 				if (redTeam.addPlayer(player)) {
-					player.sendMessage("You have joined The " + redTeam.getName());
-					blueTeam.alertPlayers(player.getDisplayName() + "has joined the " + redTeam.getName());
+					//new player on the team
 					
-					//TODO: register player with menu
+					//First make sure there isn't a timer.
+					//if so cancel it
+					if (timer != null) {
+						//the fight was getting ready to start
+						timer.cancel();
+						timer = null;
+					}
+					
+					player.sendMessage("You have joined The " + redTeam.getName());
+					blueTeam.alertPlayers(player.getDisplayName() + " has joined the " + redTeam.getName());
+					
+					handle.addPlayerReady(player.getUniqueId(), 1); //redteam = team 1
 				}
 				return;
 			}
@@ -254,10 +273,26 @@ public class Arena implements Listener{
 			//add the player if the player is not on the blue team
 			if (! blueTeam.contains(player)){
 				if (blueTeam.addPlayer(player)) {
+					//new player on the team
+					
+					//First make sure there isn't a timer.
+					//if so cancel it
+					if (timer != null) {
+						//the fight was getting ready to start
+						timer.cancel();
+						timer = null;
+					}
+					
 					player.sendMessage("You have joined The " + blueTeam.getName());
 					redTeam.alertPlayers(player.getDisplayName() + "has joined the " + blueTeam.getName());
+
+					handle.addPlayerReady(player.getUniqueId(), 2); //redteam = team 1
+
 					
-					//TODO: register player with menu
+					//reset everyone's ready status
+					redTeam.setTeamReady(false);
+					blueTeam.setTeamReady(false);
+				
 				}
 				return;
 			}
@@ -307,12 +342,55 @@ public class Arena implements Listener{
 			}
 		}
 		
+		
 		//if both teams are ready...
 		if (red && blue){
 			//start the fight
-			startfight();
+			//startfight();
 			//instead we move to second phase, which is git the stakes
 			//TODO: MOVE TO SECOND PAGE
+			startBets();
+		}
+	}
+	
+	/**
+	 * makes sure both teams have acknowledges the trade
+	 */
+	public void fightAccept() {
+		boolean red, blue;
+		red = redTeam.isAcknowledge();
+		blue = blueTeam.isAcknowledge();
+		
+		if (red & blue) {
+			//both teams have fully accepted the loot
+			startfight();
+			return;
+		}
+		
+		if (red) {
+			//blue team is not ready but red team is. 
+			this.broadcastMessage("The " + redTeam.getName() + " has accepted the terms and is ready to begin the fight!");
+			
+			//start the countdown timer
+			if (timer == null) {
+				//no timer currently on
+				timer = new Timer((ArenaPlugin) Bukkit.getPluginManager().getPlugin("Arena"), this.forceAccept, 200, true, 20);
+				}
+			
+			return;
+		}
+		
+		if (blue) {
+			this.broadcastMessage("The " + blueTeam.getName() + " has accepted the terms and is ready to begin the fight!");
+			
+
+			//start the countdown timer
+			if (timer == null) {
+				//no timer currently on
+				timer = new Timer((ArenaPlugin) Bukkit.getPluginManager().getPlugin("Arena"), this.forceAccept, 200, true, 20);
+				}
+			
+			return;
 		}
 	}
 	
@@ -350,7 +428,7 @@ public class Arena implements Listener{
 		Player player = (Player) event.getEntity();
 		Player damager = (Player) event.getDamager();
 		
-		if (settings.TEAMATTACK) {
+		if (!settings.TEAMATTACK) {
 			if (redTeam.contains(player) && redTeam.contains(damager)) {
 				//we need to cancel it
 				event.setCancelled(true);
@@ -367,6 +445,12 @@ public class Arena implements Listener{
 		if (event.getDamage() >= player.getHealth())		
 		if (checkTeam(player)) {
 			player.teleport(coolLocation);
+			PlayerInventory inv = player.getPlayer().getInventory();
+			
+			inv.clear();
+			inv.setArmorContents(null);
+			
+			
 			player.setHealth(20);
 			//check if the fight is now over
 			fightOver();
@@ -382,7 +466,6 @@ public class Arena implements Listener{
 		
 		Player player = event.getPlayer();
 		checkTeam(player);
-		//TODO: take off of menu
 	}
 	
 	/**
@@ -465,6 +548,8 @@ public class Arena implements Listener{
 				suitUp(p, redTeam);
 			}
 			
+			handle.removePlayerAccept(p.getPlayer().getUniqueId());
+			
 			//int rand = new Random().nextInt(8);
 			actualLocation = teamOneSpawn.clone();
 			//added .5 to X and Z so that players spawn in the middle of the block
@@ -501,6 +586,7 @@ public class Arena implements Listener{
 				
 				suitUp(p, blueTeam);
 			}
+			handle.removePlayerAccept(p.getPlayer().getUniqueId());
 			
 			//int rand = new Random().nextInt(8);
 			actualLocation = teamTwoSpawn.clone();
@@ -514,7 +600,9 @@ public class Arena implements Listener{
 		
 		//make sure timer is null. If it's not, it's still counting down to auto-ready or auto-acknowledge
 		if (timer != null) {
+			System.out.println("Trying to cancel timer...");
 			timer.cancel();
+			timer = null;
 		}
 		countDown();
 		
@@ -598,6 +686,8 @@ public class Arena implements Listener{
 		
 		//end the fight
 		currentFight = false;
+		
+		handle.reInit();
 	}
 
 	private boolean blueSwitchPressed(PlayerInteractEvent event) {
@@ -680,7 +770,7 @@ public class Arena implements Listener{
 			p.teleport(exitLocation);
 			p.sendMessage("You have fled battle!");
 			
-			//TODO: unregister player from menu
+			handle.removePlayerReady(p.getUniqueId());
 			
 			return;
 		}
@@ -697,7 +787,7 @@ public class Arena implements Listener{
 			p.teleport(exitLocation);
 			p.sendMessage("You have fled battle!");
 			
-			//TODO: unregister player from menu
+			handle.removePlayerReady(p.getUniqueId());
 			
 			return;
 		}
@@ -841,6 +931,8 @@ public class Arena implements Listener{
 						pLoc.setX(loc.getX());
 						pLoc.setY(loc.getY());
 						pLoc.setZ(loc.getZ());
+						player.getPlayer().teleport(pLoc);
+						
 						
 					}
 					for (TeamPlayer player : blueTeam.getPlayers()) {
@@ -852,6 +944,7 @@ public class Arena implements Listener{
 						pLoc.setX(loc.getX());
 						pLoc.setY(loc.getY());
 						pLoc.setZ(loc.getZ());
+						player.getPlayer().teleport(pLoc);
 					}
 						
 				}
@@ -867,6 +960,63 @@ public class Arena implements Listener{
 		
 		reset.runTaskTimer(Bukkit.getPluginManager().getPlugin("Arena"), increment, increment);
 		
+	}
+	
+	/**
+	 * searches all teams and tries to match the player to a TeamPlayer, returning it if it exists
+	 * @param player
+	 */
+	public TeamPlayer getTeamPlayer(Player player) {
+		TeamPlayer tp;
+		
+		tp = redTeam.getTeamPlayer(player);
+		
+		if (tp == null) {
+			//one more try
+			tp = blueTeam.getTeamPlayer(player);
+		}
+		
+		return tp; //null if in neither
+	}
+	
+	public Team getTeam(Player player) {
+		Team team;
+		
+		if (redTeam.contains(player)) {
+			team = redTeam;
+		}
+		else if (blueTeam.contains(player)) {
+			team = blueTeam;
+		}
+		else {
+			team = null;
+		}
+		
+		return team;
+	}
+	
+	private void startBets() {
+		
+		if (this.tryingToAccept) {
+			return;
+		}
+		
+		this.tryingToAccept = true;
+		
+		redTeam.setTeamAcknowledge(false);
+		blueTeam.setTeamAcknowledge(false);
+		
+		
+		
+		for (TeamPlayer p : redTeam.getPlayers()) {
+			//add players to new menu, and delete from old
+			handle.removePlayerReady(p.getPlayer().getUniqueId());
+			handle.addPlayerAccept(p.getPlayer().getUniqueId(), 1);
+		}
+		for (TeamPlayer p : blueTeam.getPlayers()) {
+			handle.removePlayerReady(p.getPlayer().getUniqueId());
+			handle.addPlayerAccept(p.getPlayer().getUniqueId(), 2);
+		}
 	}
 
 }

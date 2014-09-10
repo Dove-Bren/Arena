@@ -1,5 +1,6 @@
 package com.SkyIsland.Arena.Team;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.bukkit.Color;
@@ -116,9 +117,12 @@ public class Team {
 	}
 	
 	public void removePlayer(Player p){
-		for (TeamPlayer tp: players){
+		Iterator<TeamPlayer> i = players.iterator();
+		while (i.hasNext()){
+			TeamPlayer tp = i.next();
+			
 			if (tp.getPlayer().equals(p)){
-				players.remove(tp);
+				i.remove();
 			}
 		}
 	}
@@ -209,4 +213,20 @@ public class Team {
 		//player is not in the list
 		return false;
 	}
+	
+	/**
+	 * Tries to get the TeamPlayer that matches the given player.
+	 * @param player
+	 * @return
+	 */
+	public TeamPlayer getTeamPlayer(Player player) {
+		for (TeamPlayer p : players) {
+			if (p.getPlayer().equals(player)) {
+				return p;
+			}
+		}
+		//none found
+		return null;
+	}
+
 }

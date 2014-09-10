@@ -9,6 +9,7 @@ import java.io.IOException;
 
 
 
+
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.command.Command;
@@ -17,6 +18,7 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.SkyIsland.Arena.Menu.MenuHandle;
 import com.m0pt0pmatt.menuservice.api.MenuService;
 
 public class ArenaPlugin extends JavaPlugin {
@@ -26,17 +28,21 @@ public class ArenaPlugin extends JavaPlugin {
 	public double version = 0.16;
 	private CommandHandler handler;
 	private MenuService menuService;
+	public MenuHandle menuHandle;
 	
 	public void onEnable() {
 		load();
-		arena = new Arena(config);
+		menuService = Bukkit.getServicesManager().getRegistration(MenuService.class).getProvider();
+		menuHandle = new MenuHandle(this, menuService);
+		arena = new Arena(config, menuHandle);
 		getServer().getPluginManager().registerEvents(arena, this);
 		this.handler = new CommandHandler(this);
-		menuService = Bukkit.getServicesManager().getRegistration(MenuService.class).getProvider();
+		
 	}
 	
 	public void onDisable() {
 		save();
+		menuHandle.closeMenus();
 	}
 	
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
