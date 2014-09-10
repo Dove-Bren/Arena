@@ -4,7 +4,6 @@ package com.SkyIsland.Arena;
 import java.io.File;
 import java.io.IOException;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -14,7 +13,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.SkyIsland.Arena.Menu.MenuHandle;
-import com.m0pt0pmatt.menuservice.api.MenuService;
 
 public class ArenaPlugin extends JavaPlugin {
 	
@@ -26,13 +24,11 @@ public class ArenaPlugin extends JavaPlugin {
 	
 	public double version = 0.16;
 	private CommandHandler handler;
-	private MenuService menuService;
 	public MenuHandle menuHandle;
 	
 	public void onEnable() {
 		load();
-		menuService = Bukkit.getServicesManager().getRegistration(MenuService.class).getProvider();
-		menuHandle = new MenuHandle(this, menuService);
+		menuHandle = new MenuHandle(this);
 		arena = new Arena(config, menuHandle);
 		getServer().getPluginManager().registerEvents(arena, this);
 		this.handler = new CommandHandler(this);
